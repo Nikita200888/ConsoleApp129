@@ -1,0 +1,100 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438 2\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{CB18C708-B725-42D1-856F-85B82A98B103}|ConsoleApp129\\ConsoleApp129.csproj|D:\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438 2\\consoleapp129\\person.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CB18C708-B725-42D1-856F-85B82A98B103}|ConsoleApp129\\ConsoleApp129.csproj|solutionrelative:consoleapp129\\person.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CB18C708-B725-42D1-856F-85B82A98B103}|ConsoleApp129\\ConsoleApp129.csproj|D:\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438 2\\consoleapp129\\map.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CB18C708-B725-42D1-856F-85B82A98B103}|ConsoleApp129\\ConsoleApp129.csproj|solutionrelative:consoleapp129\\map.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CB18C708-B725-42D1-856F-85B82A98B103}|ConsoleApp129\\ConsoleApp129.csproj|D:\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438 2\\consoleapp129\\mapobject.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CB18C708-B725-42D1-856F-85B82A98B103}|ConsoleApp129\\ConsoleApp129.csproj|solutionrelative:consoleapp129\\mapobject.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CB18C708-B725-42D1-856F-85B82A98B103}|ConsoleApp129\\ConsoleApp129.csproj|d:\\\u043F\u043F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438\\\u043F\u043F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438 2\\consoleapp129\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CB18C708-B725-42D1-856F-85B82A98B103}|ConsoleApp129\\ConsoleApp129.csproj|solutionrelative:consoleapp129\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 1,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedHeight": 200,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:129:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Person.cs",
+              "DocumentMoniker": "D:\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438 2\\ConsoleApp129\\Person.cs",
+              "RelativeDocumentMoniker": "ConsoleApp129\\Person.cs",
+              "ToolTip": "D:\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438 2\\ConsoleApp129\\Person.cs",
+              "RelativeToolTip": "ConsoleApp129\\Person.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB8AAAA6AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-03T01:10:51.406Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Map.cs",
+              "DocumentMoniker": "D:\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438 2\\ConsoleApp129\\Map.cs",
+              "RelativeDocumentMoniker": "ConsoleApp129\\Map.cs",
+              "ToolTip": "D:\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438 2\\ConsoleApp129\\Map.cs",
+              "RelativeToolTip": "ConsoleApp129\\Map.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAJUAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-03T01:10:51.519Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "MapObject.cs",
+              "DocumentMoniker": "D:\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438 2\\ConsoleApp129\\MapObject.cs",
+              "RelativeDocumentMoniker": "ConsoleApp129\\MapObject.cs",
+              "ToolTip": "D:\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438 2\\ConsoleApp129\\MapObject.cs",
+              "RelativeToolTip": "ConsoleApp129\\MapObject.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-03T01:10:51.52Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438 2\\ConsoleApp129\\Program.cs",
+              "RelativeDocumentMoniker": "ConsoleApp129\\Program.cs",
+              "ToolTip": "D:\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438\\\u041F\u041F \u0434\u043B\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0438 2\\ConsoleApp129\\Program.cs",
+              "RelativeToolTip": "ConsoleApp129\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-03T01:10:51.588Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

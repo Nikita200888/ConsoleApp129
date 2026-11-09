@@ -1,0 +1,15 @@
+C:\Users\Вадим\source\repos\ConsoleApp129\ConsoleApp129\bin\Debug\ConsoleApp129.exe.config
+C:\Users\Вадим\source\repos\ConsoleApp129\ConsoleApp129\bin\Debug\ConsoleApp129.exe
+C:\Users\Вадим\source\repos\ConsoleApp129\ConsoleApp129\bin\Debug\ConsoleApp129.pdb
+C:\Users\Вадим\source\repos\ConsoleApp129\ConsoleApp129\obj\Debug\ConsoleApp129.csproj.AssemblyReference.cache
+C:\Users\Вадим\source\repos\ConsoleApp129\ConsoleApp129\obj\Debug\ConsoleApp129.csproj.SuggestedBindingRedirects.cache
+C:\Users\Вадим\source\repos\ConsoleApp129\ConsoleApp129\obj\Debug\ConsoleApp129.csproj.CoreCompileInputs.cache
+C:\Users\Вадим\source\repos\ConsoleApp129\ConsoleApp129\obj\Debug\ConsoleApp129.exe
+C:\Users\Вадим\source\repos\ConsoleApp129\ConsoleApp129\obj\Debug\ConsoleApp129.pdb
+C:\Users\Никитосик\Desktop\ПП для практики\ПП для практики 2\ConsoleApp129\obj\Debug\ConsoleApp129.csproj.AssemblyReference.cache
+C:\Users\Никитосик\Desktop\ПП для практики\ПП для практики 2\ConsoleApp129\obj\Debug\ConsoleApp129.csproj.CoreCompileInputs.cache
+C:\Users\Никитосик\Desktop\ПП для практики\ПП для практики 2\ConsoleApp129\obj\Debug\ConsoleApp129.exe
+C:\Users\Никитосик\Desktop\ПП для практики\ПП для практики 2\ConsoleApp129\obj\Debug\ConsoleApp129.pdb
+C:\Users\Никитосик\Desktop\ПП для практики\ПП для практики 2\ConsoleApp129\bin\Debug\ConsoleApp129.exe.config
+C:\Users\Никитосик\Desktop\ПП для практики\ПП для практики 2\ConsoleApp129\bin\Debug\ConsoleApp129.exe
+C:\Users\Никитосик\Desktop\ПП для практики\ПП для практики 2\ConsoleApp129\bin\Debug\ConsoleApp129.pdb
