@@ -14,44 +14,78 @@ namespace ConsoleApp129
             while (!exitGame)
             {
                 int mainChoice = Menu.ShowMainMenu();
-                if (mainChoice == 2) break; // Выход
+                if (mainChoice == 3) break; // выход
 
                 bool restartGame = true;
                 while (restartGame)
                 {
                     restartGame = false;
                     Map map = new Map();
-                    map.Map_generation();
+                    SaveData loadedData = null;
+
+                    // Если нажали "Вернуться в последнюю сессию"
+                    if (mainChoice == 2)
+                    {
+                        loadedData = SaveManager.LoadGame();
+                        if (loadedData != null)
+                        {
+                            // Загружаем карту из JSON
+                            map.LoadMapFromSave(loadedData);
+                        }
+                        else
+                        {
+                            map.Map_generation(); // Если файл битый - генерируем новую
+                        }
+                    }
+                    else
+                    {
+                        map.Map_generation(); // Новая игра
+                    }
+
                     bool isPlaying = true;
 
                     while (isPlaying)
                     {
                         Console.Clear();
                         map.Drawing_the_map();
-
                         Console.WriteLine("\nУправление: стрелки. Esc - меню.");
+
                         ConsoleKey key = Console.ReadKey(true).Key;
 
-                        // Пауза
+                        // ПАУЗА
                         if (key == ConsoleKey.Escape)
                         {
                             int pauseChoice = Menu.ShowPauseMenu();
-                            if (pauseChoice == 1) continue;
-                            if (pauseChoice == 2) { restartGame = true; isPlaying = false; continue; }
+                            if (pauseChoice == 1) continue;//продолжить
+
+                            if (pauseChoice == 2) // СОХРАНИТЬ ВСЁ
+                            {
+                                MapObject[,] array = map.GetMapArray();
+                                int hX = 0, hY = 0;
+                                // Ищем, где сейчас герой, чтобы сохранить его координаты
+                                for (int i = 0; i < array.GetLength(0); i++)
+                                    for (int j = 0; j < array.GetLength(1); j++)
+                                        if (array[i, j] is Hero) { hX = i; hY = j; }
+
+                                SaveManager.SaveGame(1, array, hX, hY); // 1 - уровень
+
+                                Console.WriteLine("\nИгра сохранена! Нажмите любую клавишу...");
+                                Console.ReadKey(true);
+                                continue;
+                            }
                             if (pauseChoice == 3) { isPlaying = false; restartGame = false; continue; }
                         }
 
-                        // Ход героя
+                        // ДВИЖЕНИЕ
                         if (key == ConsoleKey.UpArrow || key == ConsoleKey.DownArrow ||
                             key == ConsoleKey.LeftArrow || key == ConsoleKey.RightArrow)
                         {
                             map.MovePersons(key);
                         }
 
-                        // Ход врагов
                         map.MovePersons();
 
-                        // --- ПРОВЕРКА НА СМЕРТЬ ---
+                        // СМЕРТЬ
                         if (!map.IsHeroAlive())
                         {
                             Console.Clear();
@@ -60,6 +94,8 @@ namespace ConsoleApp129
                             Console.ResetColor();
                             Console.WriteLine("\nНажмите любую клавишу для выхода в меню...");
                             Console.ReadKey(true);
+
+                            SaveManager.DeleteSave();
 
                             isPlaying = false;
                             restartGame = false;

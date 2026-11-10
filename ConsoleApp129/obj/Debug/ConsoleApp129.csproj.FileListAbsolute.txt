@@ -20,3 +20,6 @@ C:\Users\Никитосик\Desktop\Задания на практику ТРП�
 C:\Users\Никитосик\Desktop\Задания на практику ТРПО\ПП для практики\ПП для практики 2\ConsoleApp129\obj\Debug\ConsoleApp129.csproj.CoreCompileInputs.cache
 C:\Users\Никитосик\Desktop\Задания на практику ТРПО\ПП для практики\ПП для практики 2\ConsoleApp129\obj\Debug\ConsoleApp129.exe
 C:\Users\Никитосик\Desktop\Задания на практику ТРПО\ПП для практики\ПП для практики 2\ConsoleApp129\obj\Debug\ConsoleApp129.pdb
+C:\Users\Никитосик\Desktop\Задания на практику ТРПО\ПП для практики\ПП для практики 2\ConsoleApp129\bin\Debug\Newtonsoft.Json.dll
+C:\Users\Никитосик\Desktop\Задания на практику ТРПО\ПП для практики\ПП для практики 2\ConsoleApp129\bin\Debug\Newtonsoft.Json.xml
+C:\Users\Никитосик\Desktop\Задания на практику ТРПО\ПП для практики\ПП для практики 2\ConsoleApp129\obj\Debug\ConsoleA.A53ABBB8.Up2Date

@@ -156,6 +156,41 @@ namespace ConsoleApp129
                 }
             }
             return false;
+        }        // Метод для получения текущего уровня
+        public int GetLevel()
+        {
+            return 1; // Если найдешь переменную уровня, напиши return ТвоеНазваниеПеременной;
         }
+
+        // Метод для установки уровня (для загрузки)
+        public void SetLevel(int lvl)
+        {
+            // Если найдешь переменную уровня, напиши ТвоеНазваниеПеременной = lvl;
+            // Пока оставляем пустым, чтобы компилировалось
+        }
+        // Метод для получения массива (чтобы сохранить)
+        public MapObject[,] GetMapArray()
+        {
+            return map;
+        }
+
+        // Метод для загрузки карты из сохранения
+        public void LoadMapFromSave(SaveData data)
+        {
+            for (int i = 0; i < map.GetLength(0); i++)
+            {
+                for (int j = 0; j < map.GetLength(1); j++)
+                {
+                    char symbol = data.MapRows[i][j];
+                    // Восстанавливаем объекты по буквам
+                    if (symbol == 'H') map[i, j] = new Hero(i, j);
+                    else if (symbol == 'E') map[i, j] = new Enemy(i, j);
+                    else if (symbol == 'W') map[i, j] = new Wall();
+                    else if (symbol == 'T') map[i, j] = new Tree();
+                    else map[i, j] = new Field();
+                }
+            }
+        }
+
     }
 }
