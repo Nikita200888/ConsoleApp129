@@ -54,56 +54,48 @@ namespace ConsoleApp129
                 Console.WriteLine();
             }
         }
-        
+
         public void MovePersons()
         {
-                
-                MapObject[,] newMap = new MapObject[map.GetLength(0), map.GetLength(1)];
+            MapObject[,] newMap = new MapObject[map.GetLength(0), map.GetLength(1)];
+            Array.Copy(map, newMap, map.Length);
 
-                
-                Array.Copy(map, newMap, map.Length);
-
-                
-                for (int i = 0; i < map.GetLength(0); i++)
+            for (int i = 0; i < map.GetLength(0); i++)
+            {
+                for (int j = 0; j < map.GetLength(1); j++)
                 {
-                    for (int j = 0; j < map.GetLength(1); j++)
+                    if (map[i, j] is Enemy)
                     {
-                        if (map[i, j] is Enemy)
+                        int direction = rand.Next(4);
+                        int newX = i, newY = j;
+
+                        switch (direction)
                         {
-                            
-                            int direction = rand.Next(4); 
+                            case 0: newX = (i - 1 + map.GetLength(0)) % map.GetLength(0); break;
+                            case 1: newX = (i + 1) % map.GetLength(0); break;
+                            case 2: newY = (j - 1 + map.GetLength(1)) % map.GetLength(1); break;
+                            case 3: newY = (j + 1) % map.GetLength(1); break;
+                        }
 
-                            
-                            int newX = i, newY = j;
-                            switch (direction)
-                            {
-                                case 0:
-                                    newX = (i - 1 + map.GetLength(0)) % map.GetLength(0);
-                                    break;
-                                case 1:
-                                    newX = (i + 1) % map.GetLength(0);
-                                    break;
-                                case 2:
-                                    newY = (j - 1 + map.GetLength(1)) % map.GetLength(1);
-                                    break;
-                                case 3: 
-                                    newY = (j + 1) % map.GetLength(1);
-                                    break;
-                            }
-
-                            
-                            if (newMap[newX, newY] is Field)
-                            {
-                                newMap[newX, newY] = map[i, j];
-                                newMap[i, j] = new Field();
-                            }
+                        // Враг ходит на Field, ИЛИ НА ГЕРОЯ (чтобы убить его)
+                        if (newMap[newX, newY] is Field)
+                        {
+                            newMap[newX, newY] = map[i, j];
+                            newMap[i, j] = new Field();
+                        }
+                        else if (newMap[newX, newY] is Hero)
+                        {
+                            // ХАРДКОР: Враг встает на место героя и УБИВАЕТ его
+                            // В массиве герой просто затирается врагом. 
+                            newMap[newX, newY] = map[i, j];
+                            newMap[i, j] = new Field();
                         }
                     }
                 }
-                
-                Array.Copy(newMap, map, map.Length);
+            }
+            Array.Copy(newMap, map, map.Length);
         }
-        
+
         public void MovePersons(ConsoleKey key)
         {
             
@@ -149,6 +141,21 @@ namespace ConsoleApp129
 
             
             Array.Copy(newMap, map, map.Length);
+
+        }
+        static Random random = new Random();
+
+      
+        public bool IsHeroAlive()
+        {
+            for (int i = 0; i < map.GetLength(0); i++)
+            {
+                for (int j = 0; j < map.GetLength(1); j++)
+                {
+                    if (map[i, j] is Hero) return true;
+                }
+            }
+            return false;
         }
     }
 }

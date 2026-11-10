@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="Map.cs" />
     <Compile Include="MapObject.cs" />
+    <Compile Include="Menu.cs" />
     <Compile Include="Person.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
