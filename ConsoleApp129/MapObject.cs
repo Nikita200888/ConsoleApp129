@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConsoleApp129
 {
@@ -11,15 +7,25 @@ namespace ConsoleApp129
         public abstract char Rendering_on_the_map();
     }
 
-    internal class Wall : MapObject 
+    internal class Wall : MapObject
     {
-        
+        public bool IsPlacedByPlayer = false;
+
         public override char Rendering_on_the_map()
         {
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            return '+';
+            if (IsPlacedByPlayer)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                return '+';
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                return '+';
+            }
         }
     }
+
     internal class Field : MapObject
     {
         public override char Rendering_on_the_map()
@@ -28,6 +34,7 @@ namespace ConsoleApp129
             return '.';
         }
     }
+
     internal class Tree : MapObject
     {
         public override char Rendering_on_the_map()
