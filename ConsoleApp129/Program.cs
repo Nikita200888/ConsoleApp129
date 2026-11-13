@@ -36,13 +36,37 @@ namespace ConsoleApp129
                     restartGame = false;
                     Map map = new Map();
 
+                    // --- БЛОК ЗАГРУЗКИ С ОБРАБОТКОЙ ИСКЛЮЧЕНИЯ ---
                     if (mainChoice == 2)
                     {
-                        SaveData loadedData = SaveManager.LoadGame();
-                        if (loadedData != null) map.LoadMapFromSave(loadedData);
-                        else map.Map_generation();
+                        try
+                        {
+                            SaveData loadedData = SaveManager.LoadGame();
+                            if (loadedData != null)
+                                map.LoadMapFromSave(loadedData);
+                            else
+                                map.Map_generation();
+                        }
+                        catch (GameActionException ex)
+                        {
+                            Console.Clear();
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("\n=========================================");
+                            Console.WriteLine($"   {ex.Message}");
+                            Console.WriteLine("=========================================");
+                            Console.ResetColor();
+                            Console.WriteLine("\nНажмите любую клавишу для возврата в меню...");
+                            Console.ReadKey(true);
+
+                            restartGame = false;
+                            continue;
+                        }
                     }
-                    else map.Map_generation();
+                    else
+                    {
+                        map.Map_generation();
+                    }
+                    // ----------------------------------------------
 
                     bool isPlaying = true;
                     int playerWalls = 0;
@@ -52,7 +76,6 @@ namespace ConsoleApp129
                     DateTime nextRageTime = DateTime.Now.AddSeconds(20);
                     DateTime rageEndTime = DateTime.MinValue;
 
-                    // Список, чтобы помнить, где остались стены после ухода героя
                     List<(int, int)> hiddenWalls = new List<(int, int)>();
 
                     while (isPlaying)
@@ -60,29 +83,26 @@ namespace ConsoleApp129
                         Console.SetCursorPosition(0, 0);
                         map.Drawing_the_map();
 
-                        // Восстановление стен, с которых ушел герой
                         MapObject[,] currentMap = map.GetMapArray();
 
-                        // Находим героя
                         int heroX = -1, heroY = -1;
                         for (int i = 0; i < currentMap.GetLength(0); i++)
                             for (int j = 0; j < currentMap.GetLength(1); j++)
                                 if (currentMap[i, j] is Hero) { heroX = i; heroY = j; }
 
-                        // Если герой ушел с клетки, где была скрытая стена - возвращаем её
+                        // ВОЗВРАЩАЕМ СТЕНЫ
                         for (int i = hiddenWalls.Count - 1; i >= 0; i--)
                         {
                             var wallPos = hiddenWalls[i];
                             if (wallPos.Item1 != heroX || wallPos.Item2 != heroY)
                             {
-                                // Если на этой клетке пусто, возвращаем стену
                                 if (currentMap[wallPos.Item1, wallPos.Item2] is Field)
                                 {
                                     Wall restoredWall = new Wall();
                                     restoredWall.IsPlacedByPlayer = true;
                                     currentMap[wallPos.Item1, wallPos.Item2] = restoredWall;
                                 }
-                                hiddenWalls.RemoveAt(i); // Убираем из списка
+                                hiddenWalls.RemoveAt(i);
                             }
                         }
 
@@ -100,7 +120,7 @@ namespace ConsoleApp129
                             Console.WriteLine("                                             ");
                         }
 
-                        // Спавн погони
+                        // СПАВН ПОГОНИ
                         if (DateTime.Now >= nextRageTime && DateTime.Now >= rageEndTime)
                         {
                             rageEndTime = DateTime.Now.AddSeconds(10);
@@ -178,13 +198,11 @@ namespace ConsoleApp129
 
                                 if (targetX >= 0 && targetX < currentMap.GetLength(0) && targetY >= 0 && targetY < currentMap.GetLength(1))
                                 {
-                                    // Если там своя стена (проходим сквозь неё)
+                                    // ПРОХОД СКВОЗЬ СТЕНУ
                                     if (currentMap[targetX, targetY] is Wall w && w.IsPlacedByPlayer)
                                     {
-                                        // Запоминаем, что тут была стена
                                         hiddenWalls.Add((targetX, targetY));
 
-                                        // Ставим героя
                                         currentMap[targetX, targetY] = currentMap[heroX, heroY];
                                         currentMap[heroX, heroY] = new Field();
                                     }
@@ -209,7 +227,7 @@ namespace ConsoleApp129
                                 }
                             }
 
-                            // АТАКА ДЕРЕВОМ
+                            // АТАКА
                             if (key == ConsoleKey.F && hasWeapon)
                             {
                                 int[] dx = { -1, 1, 0, 0 };

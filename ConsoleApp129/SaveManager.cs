@@ -5,7 +5,8 @@ using Newtonsoft.Json;
 
 namespace ConsoleApp129
 {
-    // Сделали internal вместо public
+   
+
     internal class SaveData
     {
         public int Level { get; set; }
@@ -14,12 +15,10 @@ namespace ConsoleApp129
         public List<string> MapRows { get; set; }
     }
 
-    // Сделали internal вместо public
     internal static class SaveManager
     {
         private static string savePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "savegame.json");
 
-        // Метод тоже internal
         internal static void SaveGame(int level, MapObject[,] mapArray, int heroX, int heroY)
         {
             try
@@ -49,8 +48,6 @@ namespace ConsoleApp129
 
                 string json = JsonConvert.SerializeObject(data, Formatting.Indented);
                 File.WriteAllText(savePath, json);
-
-                Console.WriteLine($"\n[УСПЕХ] Игра сохранена!");
             }
             catch (Exception ex)
             {
@@ -60,14 +57,31 @@ namespace ConsoleApp129
 
         internal static SaveData LoadGame()
         {
-            if (!File.Exists(savePath)) return null;
+            // ВЫБРАСЫВАЕМ ИСКЛЮЧЕНИЕ, ЕСЛИ ФАЙЛА НЕТ
+            if (!File.Exists(savePath))
+            {
+                throw new GameActionException("Сохранений пока нет! Сначала начните новую игру и сохранитесь.");
+            }
 
             try
             {
                 string json = File.ReadAllText(savePath);
-                return JsonConvert.DeserializeObject<SaveData>(json);
+                SaveData data = JsonConvert.DeserializeObject<SaveData>(json);
+
+                if (data == null || data.MapRows == null)
+                {
+                    throw new GameActionException("Файл сохранения поврежден! Начните новую игру.");
+                }
+                return data;
             }
-            catch { return null; }
+            catch (GameActionException)
+            {
+                throw; // Пробрасываем наше исключение наверх в Program.cs
+            }
+            catch (Exception ex)
+            {
+                throw new GameActionException($"Ошибка при чтении файла: {ex.Message}");
+            }
         }
 
         internal static bool HasSave() => File.Exists(savePath);

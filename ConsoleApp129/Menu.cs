@@ -8,16 +8,17 @@ namespace ConsoleApp129
         public static int ShowMainMenu()
         {
             Console.Clear();
-            Console.ForegroundColor = ConsoleColor.Red;
+            Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("=================================");
             Console.WriteLine("       ДОБРО ПОЖАЛОВАТЬ         ");
             Console.WriteLine("=================================");
             Console.ResetColor();
+
             Console.WriteLine("\n1. Начать новую игру");
 
-            // Показываем пункт "Продолжить", только если есть файл сохранения
-            bool hasSave = File.Exists("savegame.json");
+            // Показываем пункт "Продолжить", даже если файла нет (для проверки исключения)
             Console.WriteLine("2. Продолжить (Загрузить последнее сохранение)");
+
             Console.WriteLine("3. Выйти");
             Console.WriteLine("4. Изменить скин");
             Console.Write("\nВыберите действие: ");
@@ -26,13 +27,9 @@ namespace ConsoleApp129
             {
                 var key = Console.ReadKey(true).Key;
                 if (key == ConsoleKey.D1 || key == ConsoleKey.NumPad1) return 1;
-
-                if (hasSave && (key == ConsoleKey.D2 || key == ConsoleKey.NumPad2)) return 2;
-
+                if (key == ConsoleKey.D2 || key == ConsoleKey.NumPad2) return 2;
                 if (key == ConsoleKey.D3 || key == ConsoleKey.NumPad3) return 3;
                 if (key == ConsoleKey.D4 || key == ConsoleKey.NumPad4) return 4;
-                if (key == ConsoleKey.D5 || key == ConsoleKey.NumPad5) return 5;
-
             }
         }
 
@@ -54,11 +51,9 @@ namespace ConsoleApp129
             {
                 var key = Console.ReadKey(true).Key;
                 if (key == ConsoleKey.D1 || key == ConsoleKey.NumPad1) return 1;
-                if (key == ConsoleKey.D2 || key == ConsoleKey.NumPad2) return 2; // НОВЫЙ ПУНКТ
+                if (key == ConsoleKey.D2 || key == ConsoleKey.NumPad2) return 2;
                 if (key == ConsoleKey.D3 || key == ConsoleKey.NumPad3) return 3;
                 if (key == ConsoleKey.D4 || key == ConsoleKey.NumPad4) return 4;
-
-
             }
         }
     }
