@@ -33,6 +33,7 @@ namespace ConsoleApp129
     internal class Enemy : Person
     {
         public DateTime StunUntil = DateTime.MinValue;
+        public bool IsChasing = false; // Флаг погони
 
         public Enemy(int X, int Y) : base(X, Y) { }
 
@@ -41,6 +42,11 @@ namespace ConsoleApp129
             if (DateTime.Now < StunUntil)
             {
                 Console.ForegroundColor = ConsoleColor.Blue;
+                return '☻';
+            }
+            if (IsChasing)
+            {
+                Console.ForegroundColor = ConsoleColor.Magenta; // Фиолетовый = охотник
                 return '☻';
             }
 

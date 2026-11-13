@@ -16,7 +16,7 @@ namespace ConsoleApp129
             if (IsPlacedByPlayer)
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                return '+';
+                return '+'; // Сделал блок плотнее, чтобы отличать от ресурса
             }
             else
             {
@@ -37,8 +37,15 @@ namespace ConsoleApp129
 
     internal class Tree : MapObject
     {
+        public bool IsWeapon = false;
+
         public override char Rendering_on_the_map()
         {
+            if (IsWeapon)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                return 'T';
+            }
             Console.ForegroundColor = ConsoleColor.Green;
             return 'T';
         }

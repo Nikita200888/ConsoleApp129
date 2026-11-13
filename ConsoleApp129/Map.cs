@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ConsoleApp129
 {
@@ -39,11 +40,68 @@ namespace ConsoleApp129
             }
         }
 
-        // ХОД ВРАГОВ (остается как было)
+        private int[] GetNextStep(int startX, int startY, int targetX, int targetY)
+        {
+            Queue<(int x, int y)> queue = new Queue<(int x, int y)>();
+            Dictionary<(int, int), (int, int)> cameFrom = new Dictionary<(int, int), (int, int)>();
+            queue.Enqueue((startX, startY));
+            cameFrom[(startX, startY)] = (-1, -1);
+
+            int[] dx = { -1, 1, 0, 0 };
+            int[] dy = { 0, 0, -1, 1 };
+
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+
+                if (current.x == targetX && current.y == targetY)
+                {
+                    var path = new List<(int, int)>();
+                    var curr = current;
+                    while (curr != (-1, -1) && curr != (startX, startY))
+                    {
+                        path.Add(curr);
+                        curr = cameFrom[curr];
+                    }
+
+                    if (path.Count > 0)
+                    {
+                        path.Reverse();
+                        return new int[] { path[0].Item1, path[0].Item2 };
+                    }
+                    return null;
+                }
+
+                for (int i = 0; i < 4; i++)
+                {
+                    int nx = current.x + dx[i];
+                    int ny = current.y + dy[i];
+
+                    if (nx >= 0 && nx < map.GetLength(0) && ny >= 0 && ny < map.GetLength(1))
+                    {
+                        if (map[nx, ny] is Field || map[nx, ny] is Hero)
+                        {
+                            if (!cameFrom.ContainsKey((nx, ny)))
+                            {
+                                queue.Enqueue((nx, ny));
+                                cameFrom[(nx, ny)] = current;
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
         public void MovePersons()
         {
             MapObject[,] newMap = new MapObject[map.GetLength(0), map.GetLength(1)];
             Array.Copy(map, newMap, map.Length);
+
+            int heroX = -1, heroY = -1;
+            for (int i = 0; i < map.GetLength(0); i++)
+                for (int j = 0; j < map.GetLength(1); j++)
+                    if (map[i, j] is Hero) { heroX = i; heroY = j; }
 
             for (int i = 0; i < map.GetLength(0); i++)
             {
@@ -53,16 +111,30 @@ namespace ConsoleApp129
                     {
                         if (DateTime.Now < enemy.StunUntil) continue;
 
-                        int direction = rand.Next(4);
                         int newX = i, newY = j;
 
-                        switch (direction)
+                        if (enemy.IsChasing && heroX != -1 && heroY != -1)
                         {
-                            case 0: newX = (i - 1 + map.GetLength(0)) % map.GetLength(0); break;
-                            case 1: newX = (i + 1) % map.GetLength(0); break;
-                            case 2: newY = (j - 1 + map.GetLength(1)) % map.GetLength(1); break;
-                            case 3: newY = (j + 1) % map.GetLength(1); break;
+                            int[] nextStep = GetNextStep(i, j, heroX, heroY);
+                            if (nextStep != null)
+                            {
+                                newX = nextStep[0];
+                                newY = nextStep[1];
+                            }
                         }
+                        else
+                        {
+                            int direction = rand.Next(4);
+                            switch (direction)
+                            {
+                                case 0: newX = (i - 1 + map.GetLength(0)) % map.GetLength(0); break;
+                                case 1: newX = (i + 1) % map.GetLength(0); break;
+                                case 2: newY = (j - 1 + map.GetLength(1)) % map.GetLength(1); break;
+                                case 3: newY = (j + 1) % map.GetLength(1); break;
+                            }
+                        }
+
+                        if (newMap[newX, newY] is Enemy) continue; // Не наступаем на других врагов
 
                         if (newMap[newX, newY] is Wall w)
                         {
@@ -88,7 +160,6 @@ namespace ConsoleApp129
             Array.Copy(newMap, map, map.Length);
         }
 
-        // ХОД ГЕРОЯ (теперь он реально меняет свои координаты)
         public void MovePersons(ConsoleKey key)
         {
             for (int i = 0; i < map.GetLength(0); i++)
@@ -106,16 +177,13 @@ namespace ConsoleApp129
                             case ConsoleKey.RightArrow: newY++; break;
                         }
 
-                        // Проверка на выход за края
                         if (newX >= 0 && newX < map.GetLength(0) && newY >= 0 && newY < map.GetLength(1))
                         {
-                            if (map[newX, newY] is Field || map[newX, newY] is Wall)
+                            if (map[newX, newY] is Field || map[newX, newY] is Tree || map[newX, newY] is Wall)
                             {
-                                // СНАЧАЛА ставим героя на новое место
                                 map[newX, newY] = map[i, j];
-                                // ПОТОМ стираем его со старого (ставим траву)
                                 map[i, j] = new Field();
-                                return; // Выходим, чтобы не двигать других героев (если они вдруг есть)
+                                return;
                             }
                         }
                     }
