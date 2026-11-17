@@ -3,8 +3,15 @@ using System.IO;
 
 namespace ConsoleApp129
 {
+    /// <summary>
+    /// Статический класс для отображения меню игры.
+    /// </summary>
     public static class Menu
     {
+        /// <summary>
+        /// Отображает главное меню и возвращает выбор игрока.
+        /// </summary>
+        /// <returns>Номер выбранного пункта меню (1-4).</returns>
         public static int ShowMainMenu()
         {
             Console.Clear();
@@ -15,10 +22,7 @@ namespace ConsoleApp129
             Console.ResetColor();
 
             Console.WriteLine("\n1. Начать новую игру");
-
-            // Показываем пункт "Продолжить", даже если файла нет (для проверки исключения)
             Console.WriteLine("2. Продолжить (Загрузить последнее сохранение)");
-
             Console.WriteLine("3. Выйти");
             Console.WriteLine("4. Изменить скин");
             Console.Write("\nВыберите действие: ");
@@ -33,6 +37,10 @@ namespace ConsoleApp129
             }
         }
 
+        /// <summary>
+        /// Отображает меню паузы и возвращает выбор игрока.
+        /// </summary>
+        /// <returns>Номер выбранного пункта меню (1-4).</returns>
         public static int ShowPauseMenu()
         {
             Console.Clear();

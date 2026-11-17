@@ -5,20 +5,35 @@ using Newtonsoft.Json;
 
 namespace ConsoleApp129
 {
-   
-
+    /// <summary>
+    /// Класс для хранения данных сохранения игры.
+    /// </summary>
     internal class SaveData
     {
+        /// <summary>Номер уровня.</summary>
         public int Level { get; set; }
+        /// <summary>Координата X героя.</summary>
         public int HeroX { get; set; }
+        /// <summary>Координата Y героя.</summary>
         public int HeroY { get; set; }
+        /// <summary>Строки карты.</summary>
         public List<string> MapRows { get; set; }
     }
 
+    /// <summary>
+    /// Статический класс для управления сохранениями игры.
+    /// </summary>
     internal static class SaveManager
     {
         private static string savePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "savegame.json");
 
+        /// <summary>
+        /// Сохраняет текущее состояние игры в JSON-файл.
+        /// </summary>
+        /// <param name="level">Номер уровня.</param>
+        /// <param name="mapArray">Массив карты.</param>
+        /// <param name="heroX">Координата X героя.</param>
+        /// <param name="heroY">Координата Y героя.</param>
         internal static void SaveGame(int level, MapObject[,] mapArray, int heroX, int heroY)
         {
             try
@@ -55,9 +70,13 @@ namespace ConsoleApp129
             }
         }
 
+        /// <summary>
+        /// Загружает игру из JSON-файла.
+        /// </summary>
+        /// <returns>Данные сохранения.</returns>
+        /// <exception cref="GameActionException">Выбрасывается, если файл отсутствует или поврежден.</exception>
         internal static SaveData LoadGame()
         {
-            // ВЫБРАСЫВАЕМ ИСКЛЮЧЕНИЕ, ЕСЛИ ФАЙЛА НЕТ
             if (!File.Exists(savePath))
             {
                 throw new GameActionException("Сохранений пока нет! Сначала начните новую игру и сохранитесь.");
@@ -76,7 +95,7 @@ namespace ConsoleApp129
             }
             catch (GameActionException)
             {
-                throw; // Пробрасываем наше исключение наверх в Program.cs
+                throw;
             }
             catch (Exception ex)
             {
@@ -84,7 +103,15 @@ namespace ConsoleApp129
             }
         }
 
+        /// <summary>
+        /// Проверяет наличие файла сохранения.
+        /// </summary>
+        /// <returns>True, если файл существует.</returns>
         internal static bool HasSave() => File.Exists(savePath);
+
+        /// <summary>
+        /// Удаляет файл сохранения.
+        /// </summary>
         internal static void DeleteSave() { if (File.Exists(savePath)) File.Delete(savePath); }
     }
 }

@@ -3,8 +3,15 @@ using System.Collections.Generic;
 
 namespace ConsoleApp129
 {
+    /// <summary>
+    /// Главный класс программы, содержащий точку входа.
+    /// </summary>
     internal class Program
     {
+        /// <summary>
+        /// Точка входа в программу.
+        /// </summary>
+        /// <param name="args">Аргументы командной строки.</param>
         static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -60,7 +67,7 @@ namespace ConsoleApp129
                     bool squareUsed = false, crossUsed = false, plusUsed = false;
                     bool hasWeapon = false;
 
-                    int buildingMode = 0; // 0 - нет, 2 - квадрат, 3 - турель, 4 - приманка
+                    int buildingMode = 0;
                     int buildCenterX = -1;
                     int buildCenterY = -1;
                     int buildFilled = 0;
@@ -148,12 +155,13 @@ namespace ConsoleApp129
                             }
                         }
 
+                        // ===== ИНТЕРФЕЙС =====
                         Console.SetCursorPosition(0, 26);
                         if (buildingMode > 0)
                         {
                             string name = buildingMode == 2 ? "КВАДРАТ" : buildingMode == 3 ? "ТУРЕЛЬ" : "ПРИМАНКА";
                             Console.ForegroundColor = ConsoleColor.Yellow;
-                            Console.Write($"РЕЖИМ: {name} | Заполнено: {buildFilled} / {GetBuildTotal(buildingMode)} | 1/Пробел - установить | Esc - отмена");
+                            Console.Write($"РЕЖИМ: {name} | Заполнено: {buildFilled} / {GetBuildTotal(buildingMode)} | 1/Пробел - установить | Esc - отмена          ");
                             Console.ResetColor();
                         }
                         else
@@ -162,16 +170,21 @@ namespace ConsoleApp129
                         }
 
                         Console.SetCursorPosition(0, 27);
-                        Console.WriteLine($"\nПлюсов: {playerWalls} | Кв:{squareUsed} Кр:{crossUsed} Кст:{plusUsed}");
+                        Console.Write($"Плюсов: {playerWalls} | Кв:{squareUsed} Кр:{crossUsed} Кст:{plusUsed}                    ");
 
+                        Console.SetCursorPosition(0, 28);
                         if (DateTime.Now < rageEndTime)
                         {
                             Console.ForegroundColor = ConsoleColor.Magenta;
-                            Console.WriteLine($"ОХОТА! {GetAbilityName(currentMap)}  ");
+                            Console.Write($"ОХОТА! {GetAbilityName(currentMap)}                    ");
                             Console.ResetColor();
                         }
-                        else Console.WriteLine("                                             ");
+                        else
+                        {
+                            Console.Write("                                             ");
+                        }
 
+                        // ===== ЛОГИКА =====
                         if (DateTime.Now >= nextRageTime && DateTime.Now >= rageEndTime)
                         {
                             rageEndTime = DateTime.Now.AddSeconds(10);
@@ -263,6 +276,7 @@ namespace ConsoleApp129
                             lastEnemyMove = DateTime.Now;
                         }
 
+                        // ===== УПРАВЛЕНИЕ =====
                         if (Console.KeyAvailable)
                         {
                             ConsoleKey key = Console.ReadKey(true).Key;
@@ -307,7 +321,7 @@ namespace ConsoleApp129
                                 }
                             }
 
-                            // СТРОИТЕЛЬСТВО (Клавиша 1 ИЛИ Пробел)
+                            // СТРОИТЕЛЬСТВО
                             if ((key == ConsoleKey.D1 || key == ConsoleKey.Spacebar) && playerWalls >= 1)
                             {
                                 if (buildingMode > 0 && buildCenterX != -1)
@@ -329,11 +343,9 @@ namespace ConsoleApp129
                                             if (buildingMode == 3) { nw.IsTurret = true; nw.ReadyTime = DateTime.Now.AddSeconds(3); nw.LastShot = DateTime.Now.AddSeconds(-10); }
                                             if (buildingMode == 4) { nw.IsTrap = true; nw.ReadyTime = DateTime.Now.AddSeconds(3); }
 
-                                            // Ставим стену (как раньше, с отодвиганием героя)
                                             currentMap[nx, ny] = nw;
                                             playerWalls--;
 
-                                            // Герой отходит, чтобы не застрять
                                             if (heroX + 1 < currentMap.GetLength(0) && currentMap[heroX + 1, heroY] is Field) currentMap[heroX + 1, heroY] = new Hero(heroX + 1, heroY);
                                             else if (heroX - 1 >= 0 && currentMap[heroX - 1, heroY] is Field) currentMap[heroX - 1, heroY] = new Hero(heroX - 1, heroY);
                                             break;
@@ -348,16 +360,10 @@ namespace ConsoleApp129
                                         currentMap[heroX + 1, heroY] = new Hero(heroX + 1, heroY);
                                     else if (heroX - 1 >= 0 && currentMap[heroX - 1, heroY] is Field)
                                         currentMap[heroX - 1, heroY] = new Hero(heroX - 1, heroY);
-                                    else if (heroY - 1 < currentMap.GetLength(0) && currentMap[heroY - 1, heroX] is Field)
-                                        currentMap[heroX + 1, heroY] = new Hero(heroX + 1, heroY);
-
-
-
                                     playerWalls -= 1;
                                 }
                             }
 
-                            // ВХОД В РЕЖИМ СТРОИТЕЛЬСТВА
                             if (key == ConsoleKey.D2 && playerWalls >= 8 && !squareUsed && buildingMode == 0)
                             { buildingMode = 2; buildCenterX = heroX; buildCenterY = heroY; buildFilled = 0; }
                             else if (key == ConsoleKey.D3 && playerWalls >= 5 && !crossUsed && buildingMode == 0)
@@ -365,7 +371,6 @@ namespace ConsoleApp129
                             else if (key == ConsoleKey.D4 && playerWalls >= 6 && !plusUsed && buildingMode == 0)
                             { buildingMode = 4; buildCenterX = heroX; buildCenterY = heroY; buildFilled = 0; }
 
-                            // ПРОВЕРКА ЗАВЕРШЕНИЯ
                             if (buildingMode > 0 && buildFilled == GetBuildTotal(buildingMode))
                             {
                                 if (buildingMode == 2) squareUsed = true;
@@ -406,6 +411,11 @@ namespace ConsoleApp129
             }
         }
 
+        /// <summary>
+        /// Возвращает количество клеток, необходимых для постройки объекта.
+        /// </summary>
+        /// <param name="mode">Режим строительства.</param>
+        /// <returns>Количество клеток.</returns>
         static int GetBuildTotal(int mode)
         {
             if (mode == 2) return 8;
@@ -414,6 +424,11 @@ namespace ConsoleApp129
             return 0;
         }
 
+        /// <summary>
+        /// Возвращает название способности врага по его текущему состоянию.
+        /// </summary>
+        /// <param name="m">Массив карты.</param>
+        /// <returns>Название способности.</returns>
         static string GetAbilityName(MapObject[,] m)
         {
             for (int i = 0; i < m.GetLength(0); i++)

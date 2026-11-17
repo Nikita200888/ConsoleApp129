@@ -3,11 +3,17 @@ using System.Collections.Generic;
 
 namespace ConsoleApp129
 {
+    /// <summary>
+    /// Класс, управляющий игровой картой.
+    /// </summary>
     internal class Map
     {
         Random rand = new Random();
         MapObject[,] map = new MapObject[25, 25];
 
+        /// <summary>
+        /// Генерирует новую карту со случайным расположением объектов.
+        /// </summary>
         public void Map_generation()
         {
             for (int i = 0; i < map.GetLength(0); i++)
@@ -24,6 +30,9 @@ namespace ConsoleApp129
             }
         }
 
+        /// <summary>
+        /// Отрисовывает текущее состояние карты в консоли.
+        /// </summary>
         public void Drawing_the_map()
         {
             for (int i = 0; i < map.GetLength(0); i++)
@@ -37,6 +46,15 @@ namespace ConsoleApp129
             }
         }
 
+        /// <summary>
+        /// Находит следующий шаг по алгоритму поиска пути (BFS).
+        /// </summary>
+        /// <param name="startX">Начальная координата X.</param>
+        /// <param name="startY">Начальная координата Y.</param>
+        /// <param name="targetX">Целевая координата X.</param>
+        /// <param name="targetY">Целевая координата Y.</param>
+        /// <param name="ignoreWalls">Игнорировать ли стены при поиске пути.</param>
+        /// <returns>Массив из двух координат следующего шага или null.</returns>
         private int[] GetNextStep(int startX, int startY, int targetX, int targetY, bool ignoreWalls)
         {
             Queue<(int x, int y)> queue = new Queue<(int x, int y)>();
@@ -72,6 +90,9 @@ namespace ConsoleApp129
             return null;
         }
 
+        /// <summary>
+        /// Выполняет ход врагов: движение, стрельбу, обработку способностей.
+        /// </summary>
         public void MovePersons()
         {
             MapObject[,] newMap = new MapObject[map.GetLength(0), map.GetLength(1)];
@@ -87,6 +108,7 @@ namespace ConsoleApp129
                 for (int j = 0; j < map.GetLength(1); j++)
                     if (map[i, j] is Wall w && w.IsTrap && w.IsReady && !w.IsBlueprint)
                         traps.Add((i, j));
+
             // ===================== ТУРЕЛИ =====================
             for (int i = 0; i < map.GetLength(0); i++)
             {
@@ -94,19 +116,17 @@ namespace ConsoleApp129
                 {
                     if (map[i, j] is Wall turret && turret.IsTurret && turret.IsReady)
                     {
-                        // Считаем соседей (ищем другие турели)
                         bool hasUp = i > 0 && map[i - 1, j] is Wall wu && wu.IsTurret;
                         bool hasDown = i < map.GetLength(0) - 1 && map[i + 1, j] is Wall wd && wd.IsTurret;
                         bool hasLeft = j > 0 && map[i, j - 1] is Wall wl && wl.IsTurret;
                         bool hasRight = j < map.GetLength(1) - 1 && map[i, j + 1] is Wall wr && wr.IsTurret;
 
                         int neighbors = (hasUp ? 1 : 0) + (hasDown ? 1 : 0) + (hasLeft ? 1 : 0) + (hasRight ? 1 : 0);
-                        if (neighbors != 1) continue; // Стреляют только края
+                        if (neighbors != 1) continue;
 
                         if ((DateTime.Now - turret.LastShot).TotalSeconds < 2.0) continue;
                         turret.LastShot = DateTime.Now;
 
-                        // Стреляем наружу
                         if (hasDown && !hasUp && i > 0 && map[i - 1, j] is Field)
                             newMap[i - 1, j] = new Bullet(-1, 0, false);
                         else if (hasUp && !hasDown && i < map.GetLength(0) - 1 && map[i + 1, j] is Field)
@@ -192,7 +212,6 @@ namespace ConsoleApp129
 
                         if (newMap[newX, newY] is Wall w)
                         {
-                            // ФАЗОВЫЙ ПРОХОД (4-я способность) - проходит сквозь стены
                             if (ignoreWalls)
                             {
                                 newMap[newX, newY] = map[i, j];
@@ -250,6 +269,10 @@ namespace ConsoleApp129
             Array.Copy(newMap, map, map.Length);
         }
 
+        /// <summary>
+        /// Перемещает героя в указанном направлении.
+        /// </summary>
+        /// <param name="key">Нажатая клавиша направления.</param>
         public void MovePersons(ConsoleKey key)
         {
             for (int i = 0; i < map.GetLength(0); i++)
@@ -280,6 +303,10 @@ namespace ConsoleApp129
             }
         }
 
+        /// <summary>
+        /// Проверяет, жив ли герой (есть ли он на карте).
+        /// </summary>
+        /// <returns>True, если герой найден.</returns>
         public bool IsHeroAlive()
         {
             for (int i = 0; i < map.GetLength(0); i++)
@@ -288,8 +315,16 @@ namespace ConsoleApp129
             return false;
         }
 
+        /// <summary>
+        /// Возвращает двумерный массив объектов карты.
+        /// </summary>
+        /// <returns>Массив объектов.</returns>
         public MapObject[,] GetMapArray() => map;
 
+        /// <summary>
+        /// Загружает карту из сохранения.
+        /// </summary>
+        /// <param name="data">Данные сохранения.</param>
         public void LoadMapFromSave(SaveData data)
         {
             for (int i = 0; i < map.GetLength(0); i++)
