@@ -15,7 +15,7 @@ namespace ConsoleApp129
     }
 
     /// <summary>
-    /// Класс, представляющий стену (или турель, или приманку).
+    /// Класс, представляющий стену (или турель, приманку, робота).
     /// </summary>
     internal class Wall : MapObject
     {
@@ -37,24 +37,47 @@ namespace ConsoleApp129
         /// <summary>Общее количество клеток чертежа.</summary>
         public int BuildTotal = 0;
 
+        // ===== РОБОТ =====
+
+        /// <summary>Указывает, является ли стена частью робота.</summary>
+        public bool IsRobot = false;
+        /// <summary>Указывает, является ли клетка центральной (место героя).</summary>
+        public bool IsRobotCenter = false;
+        /// <summary>Указывает, является ли клетка пушкой робота.</summary>
+        public bool IsRobotGun = false;
+        /// <summary>Указывает, проходима ли клетка для героя.</summary>
+        public bool IsPassableForHero = false;
+        /// <summary>Указывает, находится ли герой внутри робота.</summary>
+        public bool HeroInsideRobot = false;
+        /// <summary>Количество убийств, совершённых роботом.</summary>
+        public int RobotKills = 0;
+        /// <summary>Максимальное количество убийств до разрушения робота.</summary>
+        public const int RobotMaxKills = 2;
+        /// <summary>Координата X центра робота.</summary>
+        public int RobotCenterX = -1;
+        /// <summary>Координата Y центра робота.</summary>
+        public int RobotCenterY = -1;
+
         /// <summary>
         /// Проверяет, готов ли объект к работе (прошло ли время ReadyTime).
         /// </summary>
         public bool IsReady => DateTime.Now >= ReadyTime;
 
         /// <summary>
-        /// Возвращает символ для отрисовки стены.
+        /// Возвращает символ для отрисовки стены (с учетом робота).
         /// </summary>
-        /// <returns>Символ '+'.</returns>
+        /// <returns>Символ для отображения.</returns>
         public override char Rendering_on_the_map()
         {
-            if (IsBlueprint)
+            if (IsRobot)
             {
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                return '+';
+                if (IsRobotGun) { Console.ForegroundColor = ConsoleColor.Red; return '¤'; }
+                if (IsRobotCenter) { Console.ForegroundColor = ConsoleColor.Cyan; return '¤'; }
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                return '#';
             }
-            if (IsPlacedByPlayer) Console.ForegroundColor = ConsoleColor.Yellow;
-            else Console.ForegroundColor = ConsoleColor.Cyan;
+            if (IsBlueprint) { Console.ForegroundColor = ConsoleColor.DarkGray; return '+'; }
+            Console.ForegroundColor = IsPlacedByPlayer ? ConsoleColor.Yellow : ConsoleColor.Cyan;
             return '+';
         }
     }
@@ -84,6 +107,18 @@ namespace ConsoleApp129
     }
 
     /// <summary>
+    /// Класс, представляющий портал перехода на следующий уровень.
+    /// </summary>
+    internal class Portal : MapObject
+    {
+        /// <summary>
+        /// Возвращает символ для отрисовки портала.
+        /// </summary>
+        /// <returns>Символ 'O'.</returns>
+        public override char Rendering_on_the_map() { Console.ForegroundColor = ConsoleColor.Magenta; return 'O'; }
+    }
+
+    /// <summary>
     /// Класс, представляющий пулю.
     /// </summary>
     internal class Bullet : MapObject
@@ -94,6 +129,10 @@ namespace ConsoleApp129
         public int DirY;
         /// <summary>Указывает, выпущена ли пуля врагом.</summary>
         public bool IsEnemyBullet;
+        /// <summary>Указывает, выпущена ли пуля роботом.</summary>
+        public bool IsRobotBullet = false;
+        /// <summary>Центр робота-владельца (для счета убийств, даже если робот уехал).</summary>
+        public Wall OwnerRobot = null;
 
         /// <summary>
         /// Инициализирует новый экземпляр класса <see cref="Bullet"/>.
@@ -101,9 +140,10 @@ namespace ConsoleApp129
         /// <param name="dx">Направление по X.</param>
         /// <param name="dy">Направление по Y.</param>
         /// <param name="isEnemy">Признак вражеской пули.</param>
-        public Bullet(int dx, int dy, bool isEnemy = false)
+        /// <param name="isRobot">Признак пули робота.</param>
+        public Bullet(int dx, int dy, bool isEnemy = false, bool isRobot = false)
         {
-            DirX = dx; DirY = dy; IsEnemyBullet = isEnemy;
+            DirX = dx; DirY = dy; IsEnemyBullet = isEnemy; IsRobotBullet = isRobot;
         }
 
         /// <summary>
@@ -112,8 +152,9 @@ namespace ConsoleApp129
         /// <returns>Символ '*'.</returns>
         public override char Rendering_on_the_map()
         {
+            if (IsRobotBullet) { Console.ForegroundColor = ConsoleColor.Cyan; return '¤'; }
             if (IsEnemyBullet) { Console.ForegroundColor = ConsoleColor.Red; return '*'; }
-            else { Console.ForegroundColor = ConsoleColor.White; return '*'; }
+            Console.ForegroundColor = ConsoleColor.White; return '*';
         }
     }
 }

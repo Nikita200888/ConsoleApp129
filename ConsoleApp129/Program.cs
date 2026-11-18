@@ -3,19 +3,13 @@ using System.Collections.Generic;
 
 namespace ConsoleApp129
 {
-    /// <summary>
-    /// Главный класс программы, содержащий точку входа.
-    /// </summary>
     internal class Program
     {
-        /// <summary>
-        /// Точка входа в программу.
-        /// </summary>
-        /// <param name="args">Аргументы командной строки.</param>
         static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.CursorVisible = false;
+            GameUI.SubscribeToGameEvents();
             Random rnd = new Random();
 
             bool exitGame = false;
@@ -39,33 +33,45 @@ namespace ConsoleApp129
                 }
 
                 bool restartGame = true;
+                int currentLevel = 1;
+                bool isLoading = (mainChoice == 2);
+
                 while (restartGame)
                 {
                     restartGame = false;
                     Map map = new Map();
 
-                    if (mainChoice == 2)
+                    if (isLoading)
                     {
                         try
                         {
                             SaveData loadedData = SaveManager.LoadGame();
-                            if (loadedData != null) map.LoadMapFromSave(loadedData);
-                            else map.Map_generation();
+                            if (loadedData != null)
+                            {
+                                map.LoadMapFromSave(loadedData);
+                                currentLevel = map.CurrentLevel;
+                            }
+                            else map.Map_generation(currentLevel);
                         }
                         catch (GameActionException ex)
                         {
-                            Console.Clear(); Console.ForegroundColor = ConsoleColor.Red;
+                            Console.Clear();
+                            Console.ForegroundColor = ConsoleColor.Red;
                             Console.WriteLine($"\n[ОШИБКА] {ex.Message}\nНажмите клавишу...");
-                            Console.ResetColor(); Console.ReadKey(true);
-                            restartGame = false; continue;
+                            Console.ResetColor();
+                            Console.ReadKey(true);
+                            continue;
                         }
+                        isLoading = false;
                     }
-                    else map.Map_generation();
+                    else map.Map_generation(currentLevel);
 
                     bool isPlaying = true;
+
                     int playerWalls = 0;
-                    bool squareUsed = false, crossUsed = false, plusUsed = false;
+                    bool squareUsed = false, crossUsed = false, plusUsed = false, robotUsed = false;
                     bool hasWeapon = false;
+                    bool huntActive = false;
 
                     int buildingMode = 0;
                     int buildCenterX = -1;
@@ -84,181 +90,118 @@ namespace ConsoleApp129
 
                         MapObject[,] currentMap = map.GetMapArray();
                         int heroX = -1, heroY = -1;
+                        Wall robotUnderHero = null;
                         for (int i = 0; i < currentMap.GetLength(0); i++)
                             for (int j = 0; j < currentMap.GetLength(1); j++)
+                            {
                                 if (currentMap[i, j] is Hero) { heroX = i; heroY = j; }
+                                if (currentMap[i, j] is Wall ww && ww.IsRobotCenter && ww.IsRobot && ww.HeroInsideRobot)
+                                {
+                                    robotUnderHero = ww;
+                                    heroX = ww.RobotCenterX;
+                                    heroY = ww.RobotCenterY;
+                                }
+                            }
 
+                        // Восстановление скрытых стен
                         for (int i = hiddenWalls.Count - 1; i >= 0; i--)
                         {
                             var w = hiddenWalls[i];
                             if (w.Item1 != heroX || w.Item2 != heroY)
                             {
                                 if (currentMap[w.Item1, w.Item2] is Field)
-                                {
-                                    Wall rw = new Wall { IsPlacedByPlayer = true };
-                                    currentMap[w.Item1, w.Item2] = rw;
-                                }
+                                    currentMap[w.Item1, w.Item2] = new Wall { IsPlacedByPlayer = true };
                                 hiddenWalls.RemoveAt(i);
                             }
                         }
 
-                        // ===== СТАТИЧНЫЙ СИЛУЭТ =====
+                        map.CheckRobotDestruction();
+
+                        if (robotUnderHero == null)
+                        {
+                            for (int i = 0; i < currentMap.GetLength(0); i++)
+                                for (int j = 0; j < currentMap.GetLength(1); j++)
+                                    if (currentMap[i, j] is Wall ww && ww.IsRobotCenter)
+                                        ww.HeroInsideRobot = false;
+                        }
+
+                        // Чертеж
                         if (buildingMode > 0 && buildCenterX != -1)
                         {
-                            int[] dx = null;
-                            int[] dy = null;
+                            int[] dx = null, dy = null;
                             ConsoleColor color = ConsoleColor.DarkYellow;
 
-                            if (buildingMode == 2)
-                            {
-                                dx = new int[] { -1, 0, 1, 1, 1, 0, -1, -1 };
-                                dy = new int[] { -1, -1, -1, 0, 1, 1, 1, 0 };
-                                color = ConsoleColor.Yellow;
-                            }
-                            else if (buildingMode == 3)
-                            {
-                                dx = new int[] { 0, -1, 1, 0, 0 };
-                                dy = new int[] { 0, 0, 0, -1, 1 };
-                                color = ConsoleColor.Cyan;
-                            }
-                            else if (buildingMode == 4)
-                            {
-                                dx = new int[] { -1, 1, 0, 0, -2, 2 };
-                                dy = new int[] { 0, 0, -1, 1, 0, 0 };
-                                color = ConsoleColor.Magenta;
-                            }
+                            if (buildingMode == 2) { dx = new int[] { -1, 0, 1, 1, 1, 0, -1, -1 }; dy = new int[] { -1, -1, -1, 0, 1, 1, 1, 0 }; color = ConsoleColor.Yellow; }
+                            else if (buildingMode == 3) { dx = new int[] { 0, -1, 1, 0, 0 }; dy = new int[] { 0, 0, 0, -1, 1 }; color = ConsoleColor.Cyan; }
+                            else if (buildingMode == 4) { dx = new int[] { -1, 1, 0, 0, -2, 2 }; dy = new int[] { 0, 0, -1, 1, 0, 0 }; color = ConsoleColor.Magenta; }
+                            else if (buildingMode == 5) { dx = new int[] { -1, -1, -1, 0, 0, 0, 1, 1, 1 }; dy = new int[] { -1, 0, 1, -1, 0, 1, -1, 0, 1 }; color = ConsoleColor.DarkCyan; }
 
                             if (dx != null)
                             {
                                 buildFilled = 0;
-
                                 for (int k = 0; k < dx.Length; k++)
                                 {
                                     int nx = buildCenterX + dx[k];
                                     int ny = buildCenterY + dy[k];
+                                    if (nx < 0 || nx >= currentMap.GetLength(0) || ny < 0 || ny >= currentMap.GetLength(1)) continue;
 
-                                    if (nx >= 0 && nx < currentMap.GetLength(0) && ny >= 0 && ny < currentMap.GetLength(1))
+                                    if (currentMap[nx, ny] is Wall w && w.IsPlacedByPlayer) buildFilled++;
+                                    else
                                     {
-                                        if (currentMap[nx, ny] is Wall w && w.IsPlacedByPlayer)
-                                        {
-                                            buildFilled++;
-                                        }
-                                        else
-                                        {
-                                            Console.SetCursorPosition(ny * 2, nx);
-                                            Console.ForegroundColor = color;
-                                            Console.Write("+");
-                                            Console.ResetColor();
-                                        }
+                                        Console.SetCursorPosition(ny * 2, nx);
+                                        Console.ForegroundColor = color;
+                                        Console.Write("+");
+                                        Console.ResetColor();
                                     }
                                 }
                             }
                         }
 
-                        // ===== ИНТЕРФЕЙС =====
-                        Console.SetCursorPosition(0, 26);
-                        if (buildingMode > 0)
-                        {
-                            string name = buildingMode == 2 ? "КВАДРАТ" : buildingMode == 3 ? "ТУРЕЛЬ" : "ПРИМАНКА";
-                            Console.ForegroundColor = ConsoleColor.Yellow;
-                            Console.Write($"РЕЖИМ: {name} | Заполнено: {buildFilled} / {GetBuildTotal(buildingMode)} | 1/Пробел - установить | Esc - отмена          ");
-                            Console.ResetColor();
-                        }
-                        else
-                        {
-                            Console.Write("1-Стена  2-Квадрат  3-Турель  4-Приманка  |  F-удар  Esc-меню                    ");
-                        }
+                        // Интерфейс СПРАВА от карты: вся отрисовка панели инкапсулирована в GameUI,
+                        // каждая строка выводится фиксированной ширины и затирает старый текст
+                        GameUI.DrawStatusPanel(map.CurrentLevel, playerWalls, hasWeapon,
+                            buildingMode, buildFilled, robotUnderHero,
+                            currentMap, heroX, heroY, DateTime.Now < rageEndTime);
 
-                        Console.SetCursorPosition(0, 27);
-                        Console.Write($"Плюсов: {playerWalls} | Кв:{squareUsed} Кр:{crossUsed} Кст:{plusUsed}                    ");
-
-                        Console.SetCursorPosition(0, 28);
-                        if (DateTime.Now < rageEndTime)
-                        {
-                            Console.ForegroundColor = ConsoleColor.Magenta;
-                            Console.Write($"ОХОТА! {GetAbilityName(currentMap)}                    ");
-                            Console.ResetColor();
-                        }
-                        else
-                        {
-                            Console.Write("                                             ");
-                        }
-
-                        // ===== ЛОГИКА =====
+                        // Охота (паттерн Стратегия: способность охотника берется из реестра стратегий)
                         if (DateTime.Now >= nextRageTime && DateTime.Now >= rageEndTime)
                         {
                             rageEndTime = DateTime.Now.AddSeconds(10);
                             nextRageTime = DateTime.Now.AddSeconds(20);
                             int abilityType = rnd.Next(1, 6);
+                            HunterAbility strategy = HunterAbilityRegistry.Get(abilityType);
 
                             List<(int, int)> enemyPositions = new List<(int, int)>();
                             for (int i = 0; i < currentMap.GetLength(0); i++)
                                 for (int j = 0; j < currentMap.GetLength(1); j++)
                                     if (currentMap[i, j] is Enemy) enemyPositions.Add((i, j));
 
-                            if (enemyPositions.Count > 0)
+                            if (enemyPositions.Count > 0 && strategy != null)
                             {
-                                if (abilityType == 5)
+                                int huntersCount = Math.Min(Math.Max(map.CurrentLevel >= 2 ? 2 : 1, map.CurrentLevel), enemyPositions.Count);
+
+                                for (int k = enemyPositions.Count - 1; k > 0; k--)
                                 {
-                                    int[] cx = { 1, 1, 23, 23 };
-                                    int[] cy = { 1, 23, 1, 23 };
-                                    int count = 0;
-
-                                    foreach (var pos in enemyPositions)
-                                    {
-                                        if (count >= 4) break;
-                                        Enemy e = (Enemy)currentMap[pos.Item1, pos.Item2];
-                                        currentMap[pos.Item1, pos.Item2] = new Field();
-
-                                        while (count < 4)
-                                        {
-                                            if (currentMap[cx[count], cy[count]] is Field)
-                                            {
-                                                e.IsChasing = true;
-                                                e.Ability = 5;
-                                                e.HasTeleported = false;
-                                                currentMap[cx[count], cy[count]] = e;
-                                                count++;
-                                                break;
-                                            }
-                                            count++;
-                                        }
-                                    }
+                                    int r = rnd.Next(k + 1);
+                                    var tmp = enemyPositions[k];
+                                    enemyPositions[k] = enemyPositions[r];
+                                    enemyPositions[r] = tmp;
                                 }
-                                else
-                                {
-                                    var randomEnemyPos = enemyPositions[rnd.Next(enemyPositions.Count)];
-                                    if (currentMap[randomEnemyPos.Item1, randomEnemyPos.Item2] is Enemy e)
-                                    {
-                                        e.IsChasing = true;
-                                        e.Ability = abilityType;
-                                        e.HasTeleported = false;
 
-                                        if (abilityType == 2 && heroX != -1)
-                                        {
-                                            for (int attempt = 0; attempt < 30; attempt++)
-                                            {
-                                                double angle = rnd.NextDouble() * Math.PI * 2;
-                                                int dist = rnd.Next(8, 13);
-                                                int tx = heroX + (int)(Math.Cos(angle) * dist);
-                                                int ty = heroY + (int)(Math.Sin(angle) * dist);
+                                // Полиморфный вызов стратегии способности охотника:
+                                // «Волна» действует на всех врагов карты (до четырех углов),
+                                // остальные способности — только на выбранную группу охотников
+                                List<(int, int)> hunters = strategy.TargetsAllEnemies
+                                    ? enemyPositions
+                                    : enemyPositions.GetRange(0, huntersCount);
+                                strategy.ApplyToGroup(hunters, currentMap, heroX, heroY, rnd);
 
-                                                if (tx >= 1 && tx < currentMap.GetLength(0) - 1 &&
-                                                    ty >= 1 && ty < currentMap.GetLength(1) - 1 &&
-                                                    currentMap[tx, ty] is Field)
-                                                {
-                                                    currentMap[randomEnemyPos.Item1, randomEnemyPos.Item2] = new Field();
-                                                    currentMap[tx, ty] = e;
-                                                    e.HasTeleported = true;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                                huntActive = true;
+                                GameEvents.RaiseHuntStarted(abilityType);
                             }
                         }
 
+                        // Сброс охоты
                         if (DateTime.Now >= rageEndTime)
                         {
                             for (int i = 0; i < currentMap.GetLength(0); i++)
@@ -268,15 +211,49 @@ namespace ConsoleApp129
                                         e.IsChasing = false;
                                         e.Ability = 0;
                                     }
+
+                            if (huntActive)
+                            {
+                                huntActive = false;
+                                GameEvents.RaiseHuntEnded();
+                            }
                         }
 
+                        // Ход врагов
                         if ((DateTime.Now - lastEnemyMove).TotalMilliseconds > 500)
                         {
                             map.MovePersons();
                             lastEnemyMove = DateTime.Now;
+                            map.SpawnPortalIfNeeded();
+                            map.CheckRobotDestruction();
                         }
 
-                        // ===== УПРАВЛЕНИЕ =====
+                        // Переход на уровень
+                        if (map.IsHeroOnPortal())
+                        {
+                            currentLevel = map.CurrentLevel + 1;
+                            Console.Clear();
+                            Console.ForegroundColor = ConsoleColor.Magenta;
+                            Console.WriteLine($"\n\n       ПЕРЕХОД НА УРОВЕНЬ {currentLevel}...");
+                            Console.ResetColor();
+                            System.Threading.Thread.Sleep(800);
+
+                            map.Map_generation(currentLevel);
+                            playerWalls = 0;
+                            squareUsed = false; crossUsed = false; plusUsed = false; robotUsed = false;
+                            hasWeapon = false;
+                            huntActive = false;
+                            GameUI.SetEvent("");
+                            buildingMode = 0;
+                            buildCenterX = -1; buildCenterY = -1; buildFilled = 0;
+                            hiddenWalls.Clear();
+                            rageEndTime = DateTime.MinValue;
+                            nextRageTime = DateTime.Now.AddSeconds(20);
+                            lastEnemyMove = DateTime.Now;
+                            continue;
+                        }
+
+                        // Управление
                         if (Console.KeyAvailable)
                         {
                             ConsoleKey key = Console.ReadKey(true).Key;
@@ -285,69 +262,100 @@ namespace ConsoleApp129
                             {
                                 if (buildingMode > 0)
                                 {
-                                    buildingMode = 0;
-                                    buildCenterX = -1;
-                                    buildCenterY = -1;
-                                    buildFilled = 0;
+                                    buildingMode = 0; buildCenterX = -1; buildCenterY = -1; buildFilled = 0;
                                     continue;
                                 }
                                 int pChoice = Menu.ShowPauseMenu();
                                 if (pChoice == 1) continue;
-                                else if (pChoice == 2) { SaveManager.SaveGame(1, currentMap, heroX, heroY); continue; }
+                                else if (pChoice == 2) { SaveManager.SaveGame(map.CurrentLevel, currentMap, heroX, heroY); continue; }
                                 else if (pChoice == 3) { isPlaying = false; restartGame = false; continue; }
                             }
 
-                            // ДВИЖЕНИЕ
-                            if (key == ConsoleKey.UpArrow || key == ConsoleKey.DownArrow ||
-                                key == ConsoleKey.LeftArrow || key == ConsoleKey.RightArrow)
+                            // Движение
+                            if (key == ConsoleKey.UpArrow || key == ConsoleKey.DownArrow || key == ConsoleKey.LeftArrow || key == ConsoleKey.RightArrow)
                             {
-                                int tx = heroX, ty = heroY;
-                                if (key == ConsoleKey.UpArrow) tx--;
-                                if (key == ConsoleKey.DownArrow) tx++;
-                                if (key == ConsoleKey.LeftArrow) ty--;
-                                if (key == ConsoleKey.RightArrow) ty++;
-
-                                if (tx >= 0 && tx < currentMap.GetLength(0) && ty >= 0 && ty < currentMap.GetLength(1))
+                                if (robotUnderHero != null)
                                 {
-                                    if (currentMap[tx, ty] is Wall w && w.IsPlacedByPlayer)
+                                    int dx = 0, dy = 0;
+                                    if (key == ConsoleKey.UpArrow) dx = -1;
+                                    if (key == ConsoleKey.DownArrow) dx = 1;
+                                    if (key == ConsoleKey.LeftArrow) dy = -1;
+                                    if (key == ConsoleKey.RightArrow) dy = 1;
+
+                                    map.MoveRobot(robotUnderHero.RobotCenterX, robotUnderHero.RobotCenterY, dx, dy);
+                                }
+                                else
+                                {
+                                    int tx = heroX, ty = heroY;
+                                    if (key == ConsoleKey.UpArrow) tx--;
+                                    if (key == ConsoleKey.DownArrow) tx++;
+                                    if (key == ConsoleKey.LeftArrow) ty--;
+                                    if (key == ConsoleKey.RightArrow) ty++;
+
+                                    if (tx >= 0 && tx < currentMap.GetLength(0) && ty >= 0 && ty < currentMap.GetLength(1))
                                     {
-                                        hiddenWalls.Add((tx, ty));
-                                        currentMap[tx, ty] = currentMap[heroX, heroY];
-                                        currentMap[heroX, heroY] = new Field();
+                                        if (currentMap[tx, ty] is Wall w && w.IsPlacedByPlayer && !w.IsRobot)
+                                        {
+                                            hiddenWalls.Add((tx, ty));
+                                            currentMap[tx, ty] = currentMap[heroX, heroY];
+                                            currentMap[heroX, heroY] = new Field();
+                                        }
+                                        else if (currentMap[tx, ty] is Wall w2 && !w2.IsPlacedByPlayer) { playerWalls++; currentMap[tx, ty] = new Field(); map.MovePersons(key); }
+                                        else if (currentMap[tx, ty] is Tree t) { hasWeapon = true; currentMap[tx, ty] = new Field(); map.MovePersons(key); }
+                                        else map.MovePersons(key);
                                     }
-                                    else if (currentMap[tx, ty] is Wall w2 && !w2.IsPlacedByPlayer) { playerWalls++; currentMap[tx, ty] = new Field(); map.MovePersons(key); }
-                                    else if (currentMap[tx, ty] is Tree t) { hasWeapon = true; currentMap[tx, ty] = new Field(); map.MovePersons(key); }
-                                    else map.MovePersons(key);
                                 }
                             }
 
-                            // СТРОИТЕЛЬСТВО
+                            // Строительство
                             if ((key == ConsoleKey.D1 || key == ConsoleKey.Spacebar) && playerWalls >= 1)
                             {
                                 if (buildingMode > 0 && buildCenterX != -1)
                                 {
-                                    int[] dx = null;
-                                    int[] dy = null;
-
+                                    int[] dx = null, dy = null;
                                     if (buildingMode == 2) { dx = new int[] { -1, 0, 1, 1, 1, 0, -1, -1 }; dy = new int[] { -1, -1, -1, 0, 1, 1, 1, 0 }; }
                                     else if (buildingMode == 3) { dx = new int[] { 0, -1, 1, 0, 0 }; dy = new int[] { 0, 0, 0, -1, 1 }; }
                                     else if (buildingMode == 4) { dx = new int[] { -1, 1, 0, 0, -2, 2 }; dy = new int[] { 0, 0, -1, 1, 0, 0 }; }
+                                    else if (buildingMode == 5) { dx = new int[] { -1, -1, -1, 0, 0, 0, 1, 1, 1 }; dy = new int[] { -1, 0, 1, -1, 0, 1, -1, 0, 1 }; }
 
                                     for (int k = 0; k < dx.Length; k++)
                                     {
                                         int nx = buildCenterX + dx[k];
                                         int ny = buildCenterY + dy[k];
+
                                         if (nx == heroX && ny == heroY)
                                         {
                                             Wall nw = new Wall { IsPlacedByPlayer = true };
+
                                             if (buildingMode == 3) { nw.IsTurret = true; nw.ReadyTime = DateTime.Now.AddSeconds(3); nw.LastShot = DateTime.Now.AddSeconds(-10); }
                                             if (buildingMode == 4) { nw.IsTrap = true; nw.ReadyTime = DateTime.Now.AddSeconds(3); }
+                                            if (buildingMode == 5)
+                                            {
+                                                nw.IsRobot = true;
+                                                nw.RobotCenterX = buildCenterX;
+                                                nw.RobotCenterY = buildCenterY;
 
+                                                if (dx[k] == 0 && dy[k] == 0)
+                                                {
+                                                    nw.IsRobotCenter = true;
+                                                    nw.IsPassableForHero = true;
+                                                    // Первый залп доступен сразу после сборки робота
+                                                    nw.LastShot = DateTime.Now.AddSeconds(-10);
+                                                }
+                                                else if ((dx[k] == 0 && Math.Abs(dy[k]) == 1) || (dy[k] == 0 && Math.Abs(dx[k]) == 1))
+                                                {
+                                                    nw.IsRobotGun = true;
+                                                }
+                                            }
+
+                                            bool moved = TryMoveHeroAway(currentMap, heroX, heroY);
                                             currentMap[nx, ny] = nw;
                                             playerWalls--;
 
-                                            if (heroX + 1 < currentMap.GetLength(0) && currentMap[heroX + 1, heroY] is Field) currentMap[heroX + 1, heroY] = new Hero(heroX + 1, heroY);
-                                            else if (heroX - 1 >= 0 && currentMap[heroX - 1, heroY] is Field) currentMap[heroX - 1, heroY] = new Hero(heroX - 1, heroY);
+                                            if (!moved)
+                                            {
+                                                currentMap[nx, ny] = new Hero(nx, ny);
+                                            }
                                             break;
                                         }
                                     }
@@ -355,30 +363,33 @@ namespace ConsoleApp129
                                 else if (buildingMode == 0)
                                 {
                                     Wall nw = new Wall { IsPlacedByPlayer = true };
+                                    bool moved = TryMoveHeroAway(currentMap, heroX, heroY);
                                     currentMap[heroX, heroY] = nw;
-                                    if (heroX + 1 < currentMap.GetLength(0) && currentMap[heroX + 1, heroY] is Field)
-                                        currentMap[heroX + 1, heroY] = new Hero(heroX + 1, heroY);
-                                    else if (heroX - 1 >= 0 && currentMap[heroX - 1, heroY] is Field)
-                                        currentMap[heroX - 1, heroY] = new Hero(heroX - 1, heroY);
-                                    playerWalls -= 1;
+                                    playerWalls--;
+                                    if (!moved) currentMap[heroX, heroY] = new Hero(heroX, heroY);
                                 }
                             }
 
+                            // Выбор фигур
                             if (key == ConsoleKey.D2 && playerWalls >= 8 && !squareUsed && buildingMode == 0)
                             { buildingMode = 2; buildCenterX = heroX; buildCenterY = heroY; buildFilled = 0; }
                             else if (key == ConsoleKey.D3 && playerWalls >= 5 && !crossUsed && buildingMode == 0)
                             { buildingMode = 3; buildCenterX = heroX; buildCenterY = heroY; buildFilled = 0; }
                             else if (key == ConsoleKey.D4 && playerWalls >= 6 && !plusUsed && buildingMode == 0)
                             { buildingMode = 4; buildCenterX = heroX; buildCenterY = heroY; buildFilled = 0; }
+                            else if (key == ConsoleKey.D5 && playerWalls >= 9 && !robotUsed && buildingMode == 0)
+                            { buildingMode = 5; buildCenterX = heroX; buildCenterY = heroY; buildFilled = 0; }
 
-                            if (buildingMode > 0 && buildFilled == GetBuildTotal(buildingMode))
+                            if (buildingMode > 0 && buildFilled == GameUI.GetBuildTotal(buildingMode))
                             {
                                 if (buildingMode == 2) squareUsed = true;
                                 else if (buildingMode == 3) crossUsed = true;
                                 else if (buildingMode == 4) plusUsed = true;
+                                else if (buildingMode == 5) robotUsed = true;
                                 buildingMode = 0; buildCenterX = -1; buildCenterY = -1; buildFilled = 0;
                             }
 
+                            // Удар
                             if (key == ConsoleKey.F && hasWeapon)
                             {
                                 int[] dx = { -1, 1, 0, 0 }; int[] dy = { 0, 0, -1, 1 };
@@ -389,62 +400,135 @@ namespace ConsoleApp129
                                     {
                                         if (currentMap[cx, cy] is Enemy enemy)
                                         {
-                                            if (DateTime.Now < enemy.StunUntil) { currentMap[cx, cy] = new Field(); hasWeapon = false; Console.WriteLine("\nВраг уничтожен! Нажмите клавишу..."); Console.ReadKey(true); }
-                                            else { Console.WriteLine("\nВраг не в стане! Нажмите клавишу..."); Console.ReadKey(true); }
+                                            if (DateTime.Now < enemy.StunUntil)
+                                            {
+                                                currentMap[cx, cy] = new Field();
+                                                hasWeapon = false;
+                                                GameUI.ShowMessage("Враг уничтожен!");
+                                            }
+                                            else
+                                            {
+                                                GameUI.ShowMessage("Враг не в стане!");
+                                            }
                                             break;
                                         }
                                     }
                                 }
                             }
+
+                            // E: Робот
+                            if (key == ConsoleKey.E)
+                            {
+                                if (robotUnderHero != null && robotUnderHero.IsRobotCenter && robotUnderHero.IsRobot)
+                                {
+                                    if (robotUnderHero.RobotKills < Wall.RobotMaxKills)
+                                    {
+                                        // Задержка: пушки робота перезаряжаются 1 секунду между залпами
+                                        if ((DateTime.Now - robotUnderHero.LastShot).TotalSeconds >= 1.0)
+                                        {
+                                            robotUnderHero.LastShot = DateTime.Now;
+                                            int rcx = robotUnderHero.RobotCenterX;
+                                            int rcy = robotUnderHero.RobotCenterY;
+                                            for (int di = -1; di <= 1; di++)
+                                                for (int dj = -1; dj <= 1; dj++)
+                                                {
+                                                    if (di == 0 && dj == 0) continue;
+                                                    int gx = rcx + di, gy = rcy + dj;
+                                                    if (gx < 0 || gx >= currentMap.GetLength(0) || gy < 0 || gy >= currentMap.GetLength(1)) continue;
+                                                    if (currentMap[gx, gy] is Wall gun && gun.IsRobot && gun.IsRobotGun)
+                                                    {
+                                                        int tx = gx + di, ty = gy + dj;
+                                                        if (tx < 0 || tx >= currentMap.GetLength(0) || ty < 0 || ty >= currentMap.GetLength(1)) continue;
+                                                        if (currentMap[tx, ty] is Enemy)
+                                                        {
+                                                            // Враг вплотную к пушке: залп уничтожает его сразу и засчитывает убийство
+                                                            currentMap[tx, ty] = new Field();
+                                                            robotUnderHero.RobotKills++;
+                                                        }
+                                                        else if (currentMap[tx, ty] is Field || currentMap[tx, ty] is Tree)
+                                                        {
+                                                            Bullet rb = new Bullet(di, dj, false, true);
+                                                            // Владелец — ссылка на центр робота: убийство засчитается,
+                                                            // даже если робот успел уехать, пока пуля летела
+                                                            rb.OwnerRobot = robotUnderHero;
+                                                            currentMap[tx, ty] = rb;
+                                                        }
+                                                    }
+                                                }
+                                        }
+                                        else
+                                        {
+                                            GameUI.SetEvent("Пушка перезаряжается...");
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    Wall nearby = null;
+                                    for (int di = -2; di <= 2 && nearby == null; di++)
+                                        for (int dj = -2; dj <= 2 && nearby == null; dj++)
+                                        {
+                                            if (di == 0 && dj == 0) continue;
+                                            int cx = heroX + di, cy = heroY + dj;
+                                            if (cx < 0 || cx >= currentMap.GetLength(0) || cy < 0 || cy >= currentMap.GetLength(1)) continue;
+                                            if (currentMap[cx, cy] is Wall w && w.IsRobot)
+                                            {
+                                                if (w.IsRobotCenter) nearby = w;
+                                                else if (w.RobotCenterX >= 0 && w.RobotCenterY >= 0 &&
+                                                         currentMap[w.RobotCenterX, w.RobotCenterY] is Wall c && c.IsRobotCenter)
+                                                    nearby = c;
+                                            }
+                                        }
+                                    if (nearby != null && nearby.RobotKills < Wall.RobotMaxKills)
+                                    {
+                                        currentMap[heroX, heroY] = new Field();
+                                        nearby.HeroInsideRobot = true;
+                                    }
+                                }
+                            }
                         }
 
+                        // Смерть без авто-респавна (событие Наблюдателя: SaveManager сам удалит сохранение)
                         if (!map.IsHeroAlive())
                         {
-                            Console.Clear(); Console.ForegroundColor = ConsoleColor.Red;
+                            GameEvents.RaiseHeroDied();
+
+                            Console.Clear();
+                            Console.ForegroundColor = ConsoleColor.Red;
                             Console.WriteLine("\n\n       ВЫ ПОГИБЛИ! ИГРА ОКОНЧЕНА.");
-                            Console.ResetColor(); Console.WriteLine("\nНажмите любую клавишу...");
-                            Console.ReadKey(true); SaveManager.DeleteSave();
-                            isPlaying = false; restartGame = false;
+                            Console.ResetColor();
+                            Console.WriteLine("\nНажмите любую клавишу...");
+                            Console.ReadKey(true);
+                            isPlaying = false;
+                            restartGame = false;
                         }
                     }
                 }
             }
         }
 
-        /// <summary>
-        /// Возвращает количество клеток, необходимых для постройки объекта.
-        /// </summary>
-        /// <param name="mode">Режим строительства.</param>
-        /// <returns>Количество клеток.</returns>
-        static int GetBuildTotal(int mode)
+        static bool TryMoveHeroAway(MapObject[,] map, int heroX, int heroY)
         {
-            if (mode == 2) return 8;
-            if (mode == 3) return 5;
-            if (mode == 4) return 6;
-            return 0;
-        }
+            int[] dx = { 1, -1, 0, 0 };
+            int[] dy = { 0, 0, 1, -1 };
 
-        /// <summary>
-        /// Возвращает название способности врага по его текущему состоянию.
-        /// </summary>
-        /// <param name="m">Массив карты.</param>
-        /// <returns>Название способности.</returns>
-        static string GetAbilityName(MapObject[,] m)
-        {
-            for (int i = 0; i < m.GetLength(0); i++)
-                for (int j = 0; j < m.GetLength(1); j++)
-                    if (m[i, j] is Enemy e && e.IsChasing)
-                    {
-                        switch (e.Ability)
-                        {
-                            case 1: return "Скорость (Красный)";
-                            case 2: return "Телепорт (Фиолетовый)";
-                            case 3: return "Стрельба (Желтый)";
-                            case 4: return "Фазовый проход (Белый)";
-                            case 5: return "Волна (Зеленый)";
-                        }
-                    }
-            return "";
+            for (int i = 0; i < 4; i++)
+            {
+                int nx = heroX + dx[i];
+                int ny = heroY + dy[i];
+
+                if (nx < 0 || nx >= map.GetLength(0) || ny < 0 || ny >= map.GetLength(1))
+                    continue;
+
+                if (map[nx, ny] is Field || map[nx, ny] is Portal)
+                {
+                    MapObject hero = map[heroX, heroY];
+                    map[nx, ny] = hero;
+                    map[heroX, heroY] = new Field();
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

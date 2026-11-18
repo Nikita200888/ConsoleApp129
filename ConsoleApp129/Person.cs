@@ -7,74 +7,42 @@ namespace ConsoleApp129
     /// </summary>
     internal class Person : MapObject
     {
-        /// <summary>Координата X персонажа.</summary>
         public int X;
-        /// <summary>Координата Y персонажа.</summary>
         public int Y;
 
-        /// <summary>
-        /// Инициализирует новый экземпляр класса <see cref="Person"/>.
-        /// </summary>
-        /// <param name="X">Начальная координата X.</param>
-        /// <param name="Y">Начальная координата Y.</param>
         public Person(int X, int Y) { this.X = X; this.Y = Y; }
 
-        /// <summary>
-        /// Возвращает символ для отрисовки персонажа на карте.
-        /// </summary>
-        /// <returns>Символ '☺'.</returns>
         public override char Rendering_on_the_map() { return '☺'; }
     }
 
     /// <summary>
-    /// Класс, представляющий игрового героя.
+    /// Игровой герой.
     /// </summary>
     internal class Hero : Person
     {
-        /// <summary>Цвет героя на карте.</summary>
         public static ConsoleColor HeroColor = ConsoleColor.Yellow;
 
-        /// <summary>
-        /// Инициализирует новый экземпляр класса <see cref="Hero"/>.
-        /// </summary>
-        /// <param name="X">Начальная координата X.</param>
-        /// <param name="Y">Начальная координата Y.</param>
         public Hero(int X, int Y) : base(X, Y) { }
 
-        /// <summary>
-        /// Возвращает символ для отрисовки героя.
-        /// </summary>
-        /// <returns>Символ '☻'.</returns>
         public override char Rendering_on_the_map() { Console.ForegroundColor = HeroColor; return '☻'; }
     }
 
     /// <summary>
-    /// Класс, представляющий врага на карте.
+    /// Враг на карте.
     /// </summary>
     internal class Enemy : Person
     {
-        /// <summary>Время, до которого враг оглушен.</summary>
         public DateTime StunUntil = DateTime.MinValue;
-        /// <summary>Время последнего выстрела врага.</summary>
         public DateTime LastShot = DateTime.MinValue;
-        /// <summary>Флаг, указывающий, преследует ли враг героя.</summary>
         public bool IsChasing = false;
-        /// <summary>Номер активной способности (1-5).</summary>
         public int Ability = 0;
-        /// <summary>Флаг, указывающий, телепортировался ли враг.</summary>
         public bool HasTeleported = false;
 
-        /// <summary>
-        /// Инициализирует новый экземпляр класса <see cref="Enemy"/>.
-        /// </summary>
-        /// <param name="X">Начальная координата X.</param>
-        /// <param name="Y">Начальная координата Y.</param>
+        /// <summary>Множитель скорости (на уровнях >= 2 = 1.3).</summary>
+        public float SpeedMultiplier = 1.0f;
+
         public Enemy(int X, int Y) : base(X, Y) { }
 
-        /// <summary>
-        /// Возвращает символ для отрисовки врага с учетом его состояния и способности.
-        /// </summary>
-        /// <returns>Символ '☻'.</returns>
         public override char Rendering_on_the_map()
         {
             if (DateTime.Now < StunUntil) { Console.ForegroundColor = ConsoleColor.Blue; return '☻'; }

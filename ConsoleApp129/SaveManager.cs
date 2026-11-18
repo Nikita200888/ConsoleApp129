@@ -22,10 +22,28 @@ namespace ConsoleApp129
 
     /// <summary>
     /// Статический класс для управления сохранениями игры.
+    /// Подписан на событие смерти героя (паттерн Наблюдатель) и автоматически
+    /// удаляет файл сохранения, чтобы нельзя было загрузить «мертвое» состояние.
     /// </summary>
     internal static class SaveManager
     {
         private static string savePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "savegame.json");
+
+        /// <summary>
+        /// Подписывает модуль сохранений на игровые события (паттерн Наблюдатель).
+        /// </summary>
+        static SaveManager()
+        {
+            GameEvents.HeroDied += OnHeroDied;
+        }
+
+        /// <summary>
+        /// Обработчик смерти героя: удаляет файл сохранения.
+        /// </summary>
+        private static void OnHeroDied()
+        {
+            DeleteSave();
+        }
 
         /// <summary>
         /// Сохраняет текущее состояние игры в JSON-файл.

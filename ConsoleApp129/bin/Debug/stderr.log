@@ -1,0 +1,7 @@
+
+Необработанное исключение: System.IO.IOException: Неверный дескриптор.
+
+   в System.IO.__Error.WinIOError(Int32 errorCode, String maybeFullPath)
+   в System.IO.__Error.WinIOError()
+   в System.Console.set_CursorVisible(Boolean value)
+   в ConsoleApp129.Program.Main(String[] args) в C:\Users\Никитосик\Desktop\Задания на практику ТРПО\ПП для практики\ПП для практики 2\ConsoleApp129\Program.cs:строка 11

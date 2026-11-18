@@ -47,8 +47,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GameActionException.cs" />
+    <Compile Include="GameEvents.cs" />
+    <Compile Include="GameUI.cs" />
+    <Compile Include="HunterAbilities.cs" />
     <Compile Include="Map.cs" />
     <Compile Include="MapObject.cs" />
+    <Compile Include="MapObjectFactory.cs" />
     <Compile Include="Menu.cs" />
     <Compile Include="Person.cs" />
     <Compile Include="Program.cs" />
