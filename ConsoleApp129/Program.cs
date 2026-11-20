@@ -81,7 +81,7 @@ namespace ConsoleApp129
                     DateTime lastEnemyMove = DateTime.Now;
                     DateTime nextRageTime = DateTime.Now.AddSeconds(20);
                     DateTime rageEndTime = DateTime.MinValue;
-                    List<(int, int)> hiddenWalls = new List<(int, int)>();
+                    List<(int, int, Wall)> hiddenWalls = new List<(int, int, Wall)>();
 
                     while (isPlaying)
                     {
@@ -106,11 +106,11 @@ namespace ConsoleApp129
                         // Восстановление скрытых стен
                         for (int i = hiddenWalls.Count - 1; i >= 0; i--)
                         {
-                            var w = hiddenWalls[i];
-                            if (w.Item1 != heroX || w.Item2 != heroY)
+                            var (wx, wy, wallObj) = hiddenWalls[i];
+                            if (wx != heroX || wy != heroY)
                             {
-                                if (currentMap[w.Item1, w.Item2] is Field)
-                                    currentMap[w.Item1, w.Item2] = new Wall { IsPlacedByPlayer = true };
+                                if (currentMap[wx, wy] is Field)
+                                    currentMap[wx, wy] = wallObj;
                                 hiddenWalls.RemoveAt(i);
                             }
                         }
@@ -294,13 +294,34 @@ namespace ConsoleApp129
 
                                     if (tx >= 0 && tx < currentMap.GetLength(0) && ty >= 0 && ty < currentMap.GetLength(1))
                                     {
-                                        if (currentMap[tx, ty] is Wall w && w.IsPlacedByPlayer && !w.IsRobot)
+                                        if (currentMap[tx, ty] is Wall w && w.IsPlacedByPlayer && !w.IsRobot && !w.IsTurret)
                                         {
-                                            hiddenWalls.Add((tx, ty));
+                                            hiddenWalls.Add((tx, ty, w));
                                             currentMap[tx, ty] = currentMap[heroX, heroY];
                                             currentMap[heroX, heroY] = new Field();
                                         }
-                                        else if (currentMap[tx, ty] is Wall w2 && !w2.IsPlacedByPlayer) { playerWalls++; currentMap[tx, ty] = new Field(); map.MovePersons(key); }
+                                        else if (currentMap[tx, ty] is Wall w2 && !w2.IsPlacedByPlayer)
+                                        {
+                                            // Таран любой чужой стены дает стены
+                                            playerWalls++;
+                                            if (w2.IsEnemyRobot && w2.IsRobotCenter && w2.EnemyInsideRobot)
+                                            {
+                                                // Таран центра робота врага: пилот выпрыгивает наружу, робот рассыпается
+                                                currentMap[tx, ty] = new Enemy(tx, ty);
+                                                for (int di = -1; di <= 1; di++)
+                                                    for (int dj = -1; dj <= 1; dj++)
+                                                    {
+                                                        int rx = tx + di, ry = ty + dj;
+                                                        if (rx < 0 || rx >= currentMap.GetLength(0) || ry < 0 || ry >= currentMap.GetLength(1)) continue;
+                                                        if (currentMap[rx, ry] is Wall rw2 && rw2.IsRobot && rw2.IsEnemyRobot)
+                                                            currentMap[rx, ry] = new Field();
+                                                    }
+                                                GameEvents.RaiseRobotDestroyed();
+                                            }
+                                            else
+                                                currentMap[tx, ty] = new Field();
+                                            map.MovePersons(key);
+                                        }
                                         else if (currentMap[tx, ty] is Tree t) { hasWeapon = true; currentMap[tx, ty] = new Field(); map.MovePersons(key); }
                                         else map.MovePersons(key);
                                     }
@@ -398,20 +419,27 @@ namespace ConsoleApp129
                                     int cx = heroX + dx[i], cy = heroY + dy[i];
                                     if (cx >= 0 && cx < currentMap.GetLength(0) && cy >= 0 && cy < currentMap.GetLength(1))
                                     {
-                                        if (currentMap[cx, cy] is Enemy enemy)
+                                    if (currentMap[cx, cy] is Enemy enemy)
+                                    {
+                                        if (DateTime.Now < enemy.StunUntil)
                                         {
-                                            if (DateTime.Now < enemy.StunUntil)
-                                            {
-                                                currentMap[cx, cy] = new Field();
-                                                hasWeapon = false;
-                                                GameUI.ShowMessage("Враг уничтожен!");
-                                            }
-                                            else
-                                            {
-                                                GameUI.ShowMessage("Враг не в стане!");
-                                            }
-                                            break;
+                                            currentMap[cx, cy] = new Field();
+                                            hasWeapon = false;
+                                            GameUI.ShowMessage("Враг уничтожен!");
                                         }
+                                        else
+                                        {
+                                            GameUI.ShowMessage("Враг не в стане!");
+                                        }
+                                        break;
+                                    }
+                                    // Оружием можно отломать пушку подошедшего вплотную робота врага
+                                    if (currentMap[cx, cy] is Wall rw && rw.IsRobot && rw.IsEnemyRobot && rw.IsRobotGun)
+                                    {
+                                        currentMap[cx, cy] = new Field();
+                                        GameUI.ShowMessage("Пушка вражеского робота разрушена!");
+                                        break;
+                                    }
                                     }
                                 }
                             }
@@ -471,7 +499,8 @@ namespace ConsoleApp129
                                             if (di == 0 && dj == 0) continue;
                                             int cx = heroX + di, cy = heroY + dj;
                                             if (cx < 0 || cx >= currentMap.GetLength(0) || cy < 0 || cy >= currentMap.GetLength(1)) continue;
-                                            if (currentMap[cx, cy] is Wall w && w.IsRobot)
+                                            // В робота врага сесть нельзя
+                                            if (currentMap[cx, cy] is Wall w && w.IsRobot && !w.IsEnemyRobot)
                                             {
                                                 if (w.IsRobotCenter) nearby = w;
                                                 else if (w.RobotCenterX >= 0 && w.RobotCenterY >= 0 &&

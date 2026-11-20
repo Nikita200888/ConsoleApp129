@@ -22,6 +22,19 @@ namespace ConsoleApp129
         /// <summary>Координата Y портала (-1 если нет).</summary>
         public int PortalY = -1;
 
+        // ===== РОБОТЫ ВРАГОВ (уровни 2+) =====
+
+        /// <summary>Максимум роботов врагов на карте одновременно.</summary>
+        private const int MaxEnemyRobots = 2;
+        /// <summary>Задержка до первой постройки робота врагом после начала уровня (в секундах).</summary>
+        private const int EnemyRobotFirstBuildSeconds = 30;
+        /// <summary>Пауза между постройками роботов врагов (в секундах).</summary>
+        private const int EnemyRobotRebuildSeconds = 40;
+        /// <summary>Перезарядка залпа робота врага (в секундах) — как у робота героя.</summary>
+        private const double EnemyRobotShotCooldownSeconds = 1.0;
+        /// <summary>Время следующей постройки робота врагом.</summary>
+        private DateTime nextEnemyRobotBuild = DateTime.MaxValue;
+
         /// <summary>
         /// Генерирует новую карту под указанный уровень.
         /// </summary>
@@ -43,6 +56,11 @@ namespace ConsoleApp129
             }
 
             SetupLevel();
+
+            // На уровнях 2+ враги строят своих роботов: первая постройка через 30 секунд
+            nextEnemyRobotBuild = level >= 2
+                ? DateTime.Now.AddSeconds(EnemyRobotFirstBuildSeconds)
+                : DateTime.MaxValue;
         }
 
         /// <summary>
@@ -130,6 +148,9 @@ namespace ConsoleApp129
         /// </summary>
         public void MovePersons()
         {
+            // Роботы врагов строятся, ездят и стреляют до общего пересчета хода
+            UpdateEnemyRobots();
+
             MapObject[,] newMap = new MapObject[map.GetLength(0), map.GetLength(1)];
             Array.Copy(map, newMap, map.Length);
 
@@ -259,6 +280,8 @@ namespace ConsoleApp129
                         if (newMap[newX, newY] is Wall w)
                         {
                             if (w.IsRobotCenter && w.IsPassableForHero) continue;
+                            // Враги не разбирают роботов врагов
+                            if (w.IsRobot && w.IsEnemyRobot) continue;
 
                             if (ignoreWalls)
                             {
@@ -329,6 +352,12 @@ namespace ConsoleApp129
                                     newMap[nx, ny] = new Field();
                                     alive = false;
                                 }
+                                else if (newMap[nx, ny] is Wall wr && wr.IsEnemyRobot)
+                                {
+                                    // Пули робота героя пробивают клетки робота врага
+                                    DestroyEnemyRobotCell(newMap, nx, ny);
+                                    alive = false;
+                                }
                                 else if (newMap[nx, ny] is Wall w2 && !w2.IsRobot) { newMap[nx, ny] = new Field(); alive = false; }
                                 else if (newMap[nx, ny] is Tree) { newMap[nx, ny] = new Field(); alive = false; }
                                 else if (newMap[nx, ny] is Portal) { newMap[nx, ny] = new Portal(); alive = false; }
@@ -338,6 +367,12 @@ namespace ConsoleApp129
                             else
                             {
                                 if (newMap[nx, ny] is Enemy) { newMap[nx, ny] = new Field(); alive = false; }
+                                else if (newMap[nx, ny] is Wall wt && wt.IsEnemyRobot)
+                                {
+                                    // Пули турели тоже пробивают клетки робота врага
+                                    DestroyEnemyRobotCell(newMap, nx, ny);
+                                    alive = false;
+                                }
                                 else if (newMap[nx, ny] is Field) { cx = nx; cy = ny; }
                                 else alive = false;
                             }
@@ -377,7 +412,7 @@ namespace ConsoleApp129
                             if (map[newX, newY] is Wall rw && rw.IsRobot) { }
                             else if (map[newX, newY] is Field || map[newX, newY] is Tree
                                 || map[newX, newY] is Portal
-                                || (map[newX, newY] is Wall w && w.IsPlacedByPlayer && !w.IsRobot))
+                                || (map[newX, newY] is Wall w && w.IsPlacedByPlayer && !w.IsRobot && !w.IsTurret))
                             {
                                 map[newX, newY] = map[i, j];
                                 map[i, j] = new Field();
@@ -424,7 +459,7 @@ namespace ConsoleApp129
                     if (isCurrentRobotCell) continue;
 
                     MapObject obj = map[nx, ny];
-                    if (obj is Wall || obj is Hero || obj is Enemy)
+                    if (obj is Wall || obj is Hero || obj is Enemy || obj is Portal)
                         return false;
                 }
 
@@ -469,25 +504,32 @@ namespace ConsoleApp129
 
         /// <summary>
         /// Проверяет, все ли враги убиты.
+        /// Робот врага тоже считается живым врагом: пока он цел, портал не открывается.
         /// </summary>
         /// <returns>True, если на карте нет врагов.</returns>
         public bool IsLevelCleared()
         {
             for (int i = 0; i < map.GetLength(0); i++)
                 for (int j = 0; j < map.GetLength(1); j++)
+                {
                     if (map[i, j] is Enemy) return false;
+                    if (map[i, j] is Wall w && w.IsRobot && w.IsRobotCenter && w.IsEnemyRobot) return false;
+                }
             return true;
         }
 
         /// <summary>
         /// Создает портал в центре, если все враги мертвы и портала еще нет.
+        /// Сначала разбирается робот (вызывается BreakRobot), портал ставится только на Field.
         /// </summary>
         public void SpawnPortalIfNeeded()
         {
             if (PortalX != -1) return;
             if (!IsLevelCleared()) return;
 
-            if (map[HeroSpawnX, HeroSpawnY] is Field || map[HeroSpawnX, HeroSpawnY] is Hero)
+            BreakRobot();
+
+            if (map[HeroSpawnX, HeroSpawnY] is Field)
             {
                 map[HeroSpawnX, HeroSpawnY] = new Portal();
                 PortalX = HeroSpawnX; PortalY = HeroSpawnY;
@@ -512,6 +554,40 @@ namespace ConsoleApp129
                             GameEvents.RaisePortalSpawned(PortalX, PortalY);
                             return;
                         }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Разбирает робота (удаляет его с карты, оповещает подписчиков).
+        /// Вызывается перед спавном портала, чтобы герой не застревал.
+        /// </summary>
+        public void BreakRobot()
+        {
+            for (int i = 0; i < map.GetLength(0); i++)
+            {
+                for (int j = 0; j < map.GetLength(1); j++)
+                {
+                    if (map[i, j] is Wall center && center.IsRobotCenter && center.IsRobot)
+                    {
+                        int cx = center.RobotCenterX;
+                        int cy = center.RobotCenterY;
+                        if (cx < 0 || cy < 0) continue;
+
+                        for (int di = -1; di <= 1; di++)
+                            for (int dj = -1; dj <= 1; dj++)
+                            {
+                                int nx = cx + di, ny = cy + dj;
+                                if (nx < 0 || nx >= map.GetLength(0) || ny < 0 || ny >= map.GetLength(1)) continue;
+                                if (map[nx, ny] is Wall w && w.IsRobot)
+                                {
+                                    map[nx, ny] = new Field();
+                                }
+                            }
+
+                        // Оповещение подписчиков о разрушении робота (паттерн Наблюдатель)
+                        GameEvents.RaiseRobotDestroyed();
                     }
                 }
             }
@@ -573,6 +649,231 @@ namespace ConsoleApp129
         }
 
         /// <summary>
+        /// Находит позицию героя: обычного или сидящего внутри своего робота.
+        /// </summary>
+        /// <param name="heroX">Координата X героя (-1, если герой не найден).</param>
+        /// <param name="heroY">Координата Y героя (-1, если герой не найден).</param>
+        private void FindHeroPosition(out int heroX, out int heroY)
+        {
+            heroX = -1; heroY = -1;
+            for (int i = 0; i < map.GetLength(0); i++)
+                for (int j = 0; j < map.GetLength(1); j++)
+                {
+                    if (map[i, j] is Hero) { heroX = i; heroY = j; }
+                    if (map[i, j] is Wall hw && hw.IsRobotCenter && hw.IsRobot && !hw.IsEnemyRobot && hw.HeroInsideRobot)
+                    {
+                        heroX = hw.RobotCenterX;
+                        heroY = hw.RobotCenterY;
+                    }
+                }
+        }
+
+        /// <summary>
+        /// Считает количество роботов врагов на карте (по их центрам).
+        /// </summary>
+        /// <returns>Число роботов врагов.</returns>
+        private int CountEnemyRobots()
+        {
+            int count = 0;
+            for (int i = 0; i < map.GetLength(0); i++)
+                for (int j = 0; j < map.GetLength(1); j++)
+                    if (map[i, j] is Wall w && w.IsRobot && w.IsRobotCenter && w.IsEnemyRobot) count++;
+            return count;
+        }
+
+        /// <summary>
+        /// Управляет роботами врагов (уровни 2+): по таймеру враг строит робота,
+        /// затем робот с пилотом-врагом внутри едет к герою и стреляет из пушек —
+        /// все приемы те же, что у робота героя.
+        /// </summary>
+        private void UpdateEnemyRobots()
+        {
+            if (CurrentLevel < 2) return;
+
+            // ===== СТРОИТЕЛЬСТВО ПО ТАЙМЕРУ =====
+            if (DateTime.Now >= nextEnemyRobotBuild)
+            {
+                if (CountEnemyRobots() < MaxEnemyRobots && TryBuildEnemyRobot())
+                    nextEnemyRobotBuild = DateTime.Now.AddSeconds(EnemyRobotRebuildSeconds);
+                else
+                    nextEnemyRobotBuild = DateTime.Now.AddSeconds(10); // нет свободного врага или места — попытка позже
+            }
+
+            // ===== ЕЗДА И СТРЕЛЬБА ПОСТРОЕННЫХ РОБОТОВ =====
+            // Центры собираем заранее: робот смещается прямо в map, и повторный
+            // заход на его новую клетку не должен заставить его ходить дважды за тик
+            List<Wall> centers = new List<Wall>();
+            for (int i = 0; i < map.GetLength(0); i++)
+                for (int j = 0; j < map.GetLength(1); j++)
+                    if (map[i, j] is Wall c && c.IsRobotCenter && c.IsRobot && c.IsEnemyRobot)
+                        centers.Add(c);
+
+            FindHeroPosition(out int heroX, out int heroY);
+
+            foreach (Wall center in centers)
+            {
+                int cx = center.RobotCenterX;
+                int cy = center.RobotCenterY;
+                if (cx < 0 || cy < 0 || cx >= map.GetLength(0) || cy >= map.GetLength(1)) continue;
+                if (!(map[cx, cy] is Wall) || !ReferenceEquals(map[cx, cy], center)) continue;
+
+                // Стрельба: каждая пушка раз в секунду выпускает пулю наружу (как робот героя по E)
+                if ((DateTime.Now - center.LastShot).TotalSeconds >= EnemyRobotShotCooldownSeconds)
+                {
+                    center.LastShot = DateTime.Now;
+                    for (int di = -1; di <= 1; di++)
+                        for (int dj = -1; dj <= 1; dj++)
+                        {
+                            if (di == 0 && dj == 0) continue;
+                            int gx = cx + di, gy = cy + dj;
+                            if (gx < 0 || gx >= map.GetLength(0) || gy < 0 || gy >= map.GetLength(1)) continue;
+                            if (!(map[gx, gy] is Wall gun) || !gun.IsRobot || !gun.IsRobotGun || !gun.IsEnemyRobot) continue;
+
+                            int tx = gx + di, ty = gy + dj;
+                            if (tx < 0 || tx >= map.GetLength(0) || ty < 0 || ty >= map.GetLength(1)) continue;
+
+                            if (map[tx, ty] is Hero)
+                            {
+                                // Герой расстрелян вплотную к пушке
+                                map[tx, ty] = new Field();
+                            }
+                            else if (map[tx, ty] is Field)
+                            {
+                                map[tx, ty] = new Bullet(di, dj, true);
+                            }
+                        }
+                }
+
+                // Езда к герою: как робот героя, робот врага объезжает препятствия
+                if (heroX != -1)
+                {
+                    int[] step = GetNextStep(cx, cy, heroX, heroY, false);
+                    if (step != null) MoveRobot(cx, cy, step[0] - cx, step[1] - cy);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Пытается построить робота врага: выбирает случайного врага, вокруг которого
+        /// есть свободный квадрат 3×3, и собирает робота той же схемы, что у героя.
+        /// </summary>
+        /// <returns>True, если робот построен.</returns>
+        private bool TryBuildEnemyRobot()
+        {
+            List<(int x, int y)> enemies = new List<(int, int)>();
+            for (int i = 0; i < map.GetLength(0); i++)
+                for (int j = 0; j < map.GetLength(1); j++)
+                    if (map[i, j] is Enemy e && DateTime.Now >= e.StunUntil) enemies.Add((i, j));
+
+            if (enemies.Count == 0) return false;
+
+            // Перемешивание, чтобы строитель выбирался случайно
+            for (int k = enemies.Count - 1; k > 0; k--)
+            {
+                int r = rand.Next(k + 1);
+                var tmp = enemies[k]; enemies[k] = enemies[r]; enemies[r] = tmp;
+            }
+
+            FindHeroPosition(out int heroX, out int heroY);
+
+            foreach (var pos in enemies)
+            {
+                // Не строим вплотную к герою: у игрока должно быть время подготовиться
+                if (heroX != -1 && Math.Abs(pos.x - heroX) + Math.Abs(pos.y - heroY) < 6) continue;
+
+                bool free = true;
+                for (int di = -1; di <= 1 && free; di++)
+                    for (int dj = -1; dj <= 1 && free; dj++)
+                    {
+                        if (di == 0 && dj == 0) continue;
+                        int nx = pos.x + di, ny = pos.y + dj;
+                        if (nx < 0 || nx >= map.GetLength(0) || ny < 0 || ny >= map.GetLength(1)) { free = false; break; }
+                        if (!(map[nx, ny] is Field)) free = false;
+                    }
+                if (!free) continue;
+
+                BuildEnemyRobotAt(pos.x, pos.y);
+                // Оповещение подписчиков о постройке робота врагом (паттерн Наблюдатель)
+                GameEvents.RaiseEnemyRobotBuilt();
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Собирает робота врага 3×3 в указанной точке: центр, четыре пушки по сторонам,
+        /// четыре блока корпуса по диагоналям. Враг-строитель садится внутрь как пилот.
+        /// </summary>
+        /// <param name="cx">Координата X центра робота.</param>
+        /// <param name="cy">Координата Y центра робота.</param>
+        private void BuildEnemyRobotAt(int cx, int cy)
+        {
+            for (int di = -1; di <= 1; di++)
+                for (int dj = -1; dj <= 1; dj++)
+                {
+                    Wall part = new Wall();
+                    part.IsRobot = true;
+                    part.IsEnemyRobot = true;
+                    part.RobotCenterX = cx;
+                    part.RobotCenterY = cy;
+
+                    if (di == 0 && dj == 0)
+                    {
+                        part.IsRobotCenter = true;
+                        part.EnemyInsideRobot = true;
+                        // Первый залп доступен сразу после сборки — как у робота героя
+                        part.LastShot = DateTime.Now.AddSeconds(-10);
+                    }
+                    else if (di == 0 || dj == 0)
+                    {
+                        part.IsRobotGun = true;
+                    }
+
+                    map[cx + di, cy + dj] = part;
+                }
+        }
+
+        /// <summary>
+        /// Уничтожает одну клетку робота врага (пулей робота героя или турели).
+        /// Уничтожение центра разбирает робота целиком и выпускает пилота наружу.
+        /// </summary>
+        /// <param name="target">Массив карты, в котором обрабатывается попадание.</param>
+        /// <param name="x">Координата X уничтожаемой клетки.</param>
+        /// <param name="y">Координата Y уничтожаемой клетки.</param>
+        private void DestroyEnemyRobotCell(MapObject[,] target, int x, int y)
+        {
+            if (!(target[x, y] is Wall part) || !part.IsRobot || !part.IsEnemyRobot) return;
+
+            if (part.IsRobotCenter)
+            {
+                int cx = part.RobotCenterX;
+                int cy = part.RobotCenterY;
+                bool pilotInside = part.EnemyInsideRobot;
+
+                if (cx >= 0 && cy >= 0)
+                {
+                    for (int di = -1; di <= 1; di++)
+                        for (int dj = -1; dj <= 1; dj++)
+                        {
+                            int nx = cx + di, ny = cy + dj;
+                            if (nx < 0 || nx >= target.GetLength(0) || ny < 0 || ny >= target.GetLength(1)) continue;
+                            if (target[nx, ny] is Wall w && w.IsRobot && w.IsEnemyRobot)
+                                target[nx, ny] = new Field();
+                        }
+                }
+
+                if (pilotInside) target[x, y] = new Enemy(x, y);
+
+                // Оповещение подписчиков о разрушении робота (паттерн Наблюдатель)
+                GameEvents.RaiseRobotDestroyed();
+            }
+            else
+            {
+                target[x, y] = new Field();
+            }
+        }
+
+        /// <summary>
         /// Загружает карту из сохранения.
         /// </summary>
         /// <param name="data">Данные сохранения.</param>
@@ -594,6 +895,11 @@ namespace ConsoleApp129
             }
 
             SetupLevel();
+
+            // На уровнях 2+ враги строят своих роботов и после загрузки сохранения
+            nextEnemyRobotBuild = CurrentLevel >= 2
+                ? DateTime.Now.AddSeconds(EnemyRobotFirstBuildSeconds)
+                : DateTime.MaxValue;
         }
     }
 }

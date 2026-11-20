@@ -1,0 +1,47 @@
+=== SUMMARY OF ALL FIXES ===
+
+1. TURRET IMMOBILITY (Program.cs + Map.cs):
+   - Program.cs: hiddenWalls now stores (tx, ty, Wall wallObj) and adds !w.IsTurret check
+   - Map.cs: MovePersons branch now has && !w.IsTurret so player cannot walk through turrets
+   - Program.cs restoration: restores original Wall object preserving IsTurret setting
+
+2. ROBOT SHOOTING & KILLS (Program.cs + MapObject.cs + Map.cs):
+   - MapObject.cs: Bullet now has Wall OwnerRobot (reference) instead of OwnerRobotX/Y coordinates
+   - Program.cs: Robot gun has 1-second cooldown via LastShot; early press shows "Пушка перезаряжается..."
+   - Program.cs: First shot after robot build is immediate (LastShot = Now.AddSeconds(-10))
+   - Program.cs: Enemy point-blank to gun is killed immediately and counts as kill
+   - Map.cs: Robot bullets stop on hit (don't "proscribe" map); kill credited via OwnerRobot reference
+
+3. WAVE SPAWN ALL ENEMIES (HunterAbilities.cs + Program.cs):
+   - HunterAbilities.cs: Added TargetsAllEnemies property (default false); WaveHunterAbility sets it true
+   - HunterAbilities.cs: Wave ability places ALL enemies on map by corner (1->1, 2->2, 3->3, 4->4)
+   - Program.cs: Morphic call - wave gets full enemy list; other abilities get first N hunters
+
+4. DEATH LOGIC (Map.cs SpawnPortalIfNeeded):
+   - SpawnPortalIfNeeded now calls BreakRobot() FIRST before spawning portal
+   - Portal spawns ONLY on Field (not on Hero), preventing hero overwrite death
+
+5. ROBOT DESTRUCTION ON PORTAL (Map.cs):
+   - New BreakRobot() method clears all robot walls from map
+   - BreakRobot() called from SpawnPortalIfNeeded in both code branches
+   - Raises GameEvents.RaiseRobotDestroyed() event
+
+6. UI MESSAGE LOGIC (GameUI.cs):
+   - IsNearRobot now requires BOTH rw.IsRobotCenter && rw.IsRobot
+   - Previously only checked IsRobot, so appeared even for incomplete 3x3 robot builds
+
+7. REPORT UPDATES:
+   - PR7: Wave ability text updated to describe "all enemies to corners"
+   - Indepth4: Robot shooting text updated with 1-second cooldown note
+   - Report file currently locked by Word - cannot auto-install (close Word to install)
+
+FILES MODIFIED:
+- ConsoleApp129/Program.cs: hiddenWalls type, turret exclusion, robot shooting logic, wall restoration
+- ConsoleApp129/Map.cs: MovePersons turret exclusion, BreakRobot() method, SpawnPortalIfNeeded refactor
+- ConsoleApp129/MapObject.cs: Bullet.OwnerRobot reference instead of coordinates
+- ConsoleApp129/GameUI.cs: IsNearRobot requires IsRobotCenter && IsRobot
+- ConsoleApp129/HunterAbilities.cs: TargetsAllEnemies property, WaveHunterAbility override
+
+BUILD: Successful. ConsoleApp129.exe rebuilt in bin\Debug.
+
+NEXT STEP: Close the report document in Word, then run the report installation to apply the updated docx with PR6/PR7/PR8 text and robot shooting changes.

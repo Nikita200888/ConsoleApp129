@@ -45,6 +45,10 @@ namespace ConsoleApp129
         public bool IsRobotCenter = false;
         /// <summary>Указывает, является ли клетка пушкой робота.</summary>
         public bool IsRobotGun = false;
+        /// <summary>Указывает, принадлежит ли робот врагу (построен на уровнях 2+).</summary>
+        public bool IsEnemyRobot = false;
+        /// <summary>Указывает, находится ли враг-пилот внутри робота врага.</summary>
+        public bool EnemyInsideRobot = false;
         /// <summary>Указывает, проходима ли клетка для героя.</summary>
         public bool IsPassableForHero = false;
         /// <summary>Указывает, находится ли герой внутри робота.</summary>
@@ -71,6 +75,14 @@ namespace ConsoleApp129
         {
             if (IsRobot)
             {
+                // Робот врага перекрашен, чтобы на карте его было не спутать с роботом героя
+                if (IsEnemyRobot)
+                {
+                    if (IsRobotGun) { Console.ForegroundColor = ConsoleColor.DarkRed; return '¤'; }
+                    if (IsRobotCenter) { Console.ForegroundColor = ConsoleColor.Magenta; return '¤'; }
+                    Console.ForegroundColor = ConsoleColor.DarkMagenta;
+                    return '#';
+                }
                 if (IsRobotGun) { Console.ForegroundColor = ConsoleColor.Red; return '¤'; }
                 if (IsRobotCenter) { Console.ForegroundColor = ConsoleColor.Cyan; return '¤'; }
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
@@ -115,7 +127,7 @@ namespace ConsoleApp129
         /// Возвращает символ для отрисовки портала.
         /// </summary>
         /// <returns>Символ 'O'.</returns>
-        public override char Rendering_on_the_map() { Console.ForegroundColor = ConsoleColor.Magenta; return 'O'; }
+        public override char Rendering_on_the_map() { Console.ForegroundColor = ConsoleColor.Magenta; return '☠'; }
     }
 
     /// <summary>

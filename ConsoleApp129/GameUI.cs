@@ -76,6 +76,7 @@ namespace ConsoleApp129
             GameEvents.HuntEnded += delegate () { SetEvent("Охота закончилась"); };
             GameEvents.PortalSpawned += delegate (int x, int y) { SetEvent("Портал открыт! Иди к O"); };
             GameEvents.RobotDestroyed += delegate () { SetEvent("Робот уничтожен!"); };
+            GameEvents.EnemyRobotBuilt += delegate () { SetEvent("ВРАГ ПОСТРОИЛ РОБОТА!"); };
         }
 
         /// <summary>
@@ -126,7 +127,9 @@ namespace ConsoleApp129
                 Write(11, "Esc Меню", ConsoleColor.Gray);
             }
 
-            Write(12, "", ConsoleColor.Gray);
+            int enemyRobots = CountEnemyRobots(currentMap);
+            Write(12, enemyRobots > 0 ? "Роботы врага: " + enemyRobots : "", enemyRobots > 0 ? ConsoleColor.Red : ConsoleColor.Gray);
+            Write(13, "", ConsoleColor.Gray);
             DrawStatusArea(robotUnderHero, currentMap, heroX, heroY, huntActive);
             Write(17, "", ConsoleColor.Gray);
             Write(EventLine, lastEvent, ConsoleColor.DarkYellow);
@@ -174,7 +177,20 @@ namespace ConsoleApp129
         }
 
         /// <summary>
+        /// Считает количество роботов врагов на карте (по их центрам).
+        /// </summary>
+        private static int CountEnemyRobots(MapObject[,] map)
+        {
+            int count = 0;
+            for (int i = 0; i < map.GetLength(0); i++)
+                for (int j = 0; j < map.GetLength(1); j++)
+                    if (map[i, j] is Wall w && w.IsRobot && w.IsRobotCenter && w.IsEnemyRobot) count++;
+            return count;
+        }
+
+        /// <summary>
         /// Проверяет, есть ли робот рядом с героем (в радиусе 2 клеток).
+        /// Роботы врагов не считаются: в них нельзя сесть.
         /// </summary>
         private static bool IsNearRobot(MapObject[,] map, int heroX, int heroY)
         {
@@ -184,7 +200,7 @@ namespace ConsoleApp129
                 {
                     int cx = heroX + di, cy = heroY + dj;
                     if (cx < 0 || cx >= map.GetLength(0) || cy < 0 || cy >= map.GetLength(1)) continue;
-                    if (map[cx, cy] is Wall rw && rw.IsRobot) return true;
+                    if (map[cx, cy] is Wall rw && rw.IsRobotCenter && rw.IsRobot && !rw.IsEnemyRobot) return true;
                 }
             return false;
         }

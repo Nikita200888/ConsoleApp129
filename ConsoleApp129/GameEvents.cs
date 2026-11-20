@@ -24,6 +24,9 @@ namespace ConsoleApp129
         /// <summary>Событие: робот разрушен.</summary>
         public static event Action RobotDestroyed;
 
+        /// <summary>Событие: враг построил своего робота (уровни 2+).</summary>
+        public static event Action EnemyRobotBuilt;
+
         /// <summary>
         /// Публикует событие начала охоты.
         /// </summary>
@@ -65,6 +68,14 @@ namespace ConsoleApp129
         public static void RaiseRobotDestroyed()
         {
             if (RobotDestroyed != null) RobotDestroyed();
+        }
+
+        /// <summary>
+        /// Публикует событие постройки робота врагом.
+        /// </summary>
+        public static void RaiseEnemyRobotBuilt()
+        {
+            if (EnemyRobotBuilt != null) EnemyRobotBuilt();
         }
     }
 }
